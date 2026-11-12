@@ -1,6 +1,6 @@
 # Spec: Mobile sales management
 
-**Prefix:** `MSL` · **Status:** ⟳ Amending · **Version:** v0.3.0 · **Author:** Vuththana
+**Prefix:** `MSL` · **Status:** ✅ Approved · **Version:** v1.0.0 · **Author:** Vuththana
 **Tables:** `sales`, `sale_items` (sales-service; not yet in the data dictionary — see §8), read: `items`, `item_stocks`, `businesses.exchange_rate`
 **Endpoints:** [api/identity-service.md § GET /api/v1/businesses/me/exchange-rate](../../api/identity-service.md#get-apiv1businessesmeexchange-rate) (new) · the rest exist in code and are listed in §9
 **Routes (Android destinations):** `SalesList` (owner, manager) · `RecordSale` (owner, manager) · `SaleDetail(saleId)` (owner, manager)
@@ -73,10 +73,13 @@ can call (MSL-D15).
 | **MSL-D17** | Navigation | A bottom navigation bar with Sales and Profile; later features add tabs. (User, 2026-11-12, MSL-Q04) |
 | **MSL-D18** | KPI card | The card shows the server's figures as returned: USD, completed walk-in sales only, labelled "Walk-in sales today". The list is not limited to match it. (User, 2026-11-12, MSL-Q05, MSL-Q08) |
 | **MSL-D19** | Timestamps | Timestamps the API returns without an offset (`sale_date`, `reversed_at`) are UTC; the app converts them to Asia/Phnom_Penh for display. (User, 2026-11-12, MSL-Q07) |
-| **MSL-D20** | Item details on the form | When an item is added, the app reads `GET /items/{id}` (for `allows_decimals`, `selling_price`, `cost_price`) and the item's stock at the sale branch from `GET /items/stocks?branchId`. No backend change. (User, 2026-11-12, MSL-Q09) |
+| ~~**MSL-D20**~~ withdrawn in v1.0.0 — replaced by MSL-D24. Was: | Item details on the form | When an item is added, the app reads `GET /items/{id}` (for `allows_decimals`, `selling_price`, `cost_price`) and the item's stock at the sale branch from `GET /items/stocks?branchId`. No backend change. (User, 2026-11-12, MSL-Q09) |
 | **MSL-D21** | Period locked on save | A `409 PERIOD_LOCKED` on `POST /sales` shows the server message at the sale date so the user can change it; back-dating is not otherwise limited. (User, 2026-11-12, MSL-Q10) |
 | **MSL-D22** | Accounts offered | Active branch accounts and active business-wide accounts in the sale currency; the first branch account is preselected, else the first business-wide one. (User, 2026-11-12, MSL-Q11) |
 | **MSL-D23** | Price below cost | Allowed, with a warning on the line (MSL-M18), as web. (User, 2026-11-12, MSL-Q13) |
+| **MSL-D24** | Item details on the form | When an item is added, the app reads `GET /items/{id}` once: `item` gives `allows_decimals`, `selling_price`, `cost_price`; `stock_by_branch` gives the stock at the sale branch: its entry in `stock_by_branch` (the server lists every branch the user may read; a missing entry is treated as 0). Works for items without a SKU. No backend change. (User, 2026-11-12, amendment) |
+| **MSL-D25** | Failures not covered by MSL-M19 | A `POST /sales` that fails before anything was sent (no network, DNS failure, connection refused) and a `POST /sales/{id}/reverse` that gets no answer both show MSL-M08 with Retry, keeping what was entered. "Not sent" = no network, DNS failure, connection refused or connect timeout; any failure after the connection was made (read timeout, connection reset) on `POST /sales` is MSL-R40. A retried reverse that had gone through answers `409 SALE_ALREADY_REVERSED` (MSL-R35). (User, 2026-11-12, amendment) |
+| **MSL-D26** | Line inputs | Quantity, price, discount and tax fields accept no minus sign; KHR prices, discount and tax are typed in whole riel, USD ones with at most 2 decimals. Missing line texts come from web and the server (MSL-M21 … MSL-M23). (User, 2026-11-12, amendment) |
 
 ## 4. Journeys
 
@@ -110,9 +113,9 @@ sequenceDiagram
     participant I as identity-service
     UI->>I: GET /branches (owner only) · GET /businesses/me/exchange-rate
     U->>UI: choose branch, currency, search items
-    UI->>S: GET /items?search=…&status=ACTIVE
+    UI->>S: GET /items?search=…&status=ACTIVE&branchId
     U->>UI: pick an item
-    UI->>S: GET /items/{id} · GET /items/stocks?branchId&search
+    UI->>S: GET /items/{id} (item + stock_by_branch)
     UI->>F: GET /bank-statements/accounts?branchId&status=ACTIVE
     U->>UI: quantities, prices, discount, tax, payment method, account, date
     U->>UI: tap "Record sale · {total}"
@@ -122,7 +125,7 @@ sequenceDiagram
     UI-->>U: SaleDetail of the new sale
 ```
 
-Realises MSL-R09 … MSL-R27, MSL-R40, MSL-R42, MSL-R43.
+Realises MSL-R09 … MSL-R27, MSL-R40, MSL-R42 … MSL-R45, MSL-R47 … MSL-R49.
 
 ### 4c. View a sale
 
@@ -150,7 +153,7 @@ sequenceDiagram
     API-->>UI: 200 Sale reversed / 409 SALE_ALREADY_REVERSED / 409 PERIOD_LOCKED / 503
 ```
 
-Realises MSL-R31 … MSL-R35.
+Realises MSL-R31 … MSL-R35, MSL-R46.
 
 ## 5. Requirements
 
@@ -171,11 +174,11 @@ Realises MSL-R31 … MSL-R35.
 - **MSL-R10** · Manager · §4b — A manager's sale branch is their own branch and can't be changed.
 - **MSL-R11** · Owner · §4b — An owner must choose the sale branch from the business's active branches before adding items; changing it clears the lines and the account.
 - **MSL-R12** · Owner, Manager · §4b — The user picks the currency, `USD` or `KHR` (`sales.currency`).
-- **MSL-R13** · Owner, Manager · §4b — Item search calls `GET /items` with `search` and `status=ACTIVE`, matching name or SKU; when the user picks a result the app reads the item (`GET /items/{id}`) and its stock at the sale branch (`GET /items/stocks` with `branchId` and `search` set to the item's SKU, reading the row whose `item_id` matches; its `quantities` map has the branch's stock) and shows that stock on the line (MSL-D20).
+- ~~**MSL-R13**~~ withdrawn in v1.0.0 — replaced by MSL-R44 (stock from `stock_by_branch`). Was: · Owner, Manager · §4b — Item search calls `GET /items` with `search` and `status=ACTIVE`, matching name or SKU; when the user picks a result the app reads the item (`GET /items/{id}`) and its stock at the sale branch (`GET /items/stocks` with `branchId` and `search` set to the item's SKU, reading the row whose `item_id` matches; its `quantities` map has the branch's stock) and shows that stock on the line (MSL-D20).
 - **MSL-R14** · Owner, Manager · §4b — Picking an item already on the sale adds 1 to that line's quantity instead of adding a second line.
 - **MSL-R15** · Owner, Manager · §4b — A new line's unit price prefills from `items.selling_price` (USD), multiplied by `businesses.exchange_rate` from `GET /businesses/me/exchange-rate` and rounded to whole riel when the currency is KHR; the user may edit it.
 - **MSL-R16** · Owner, Manager · §4b — Changing the currency re-prefills every line's unit price, resets discount and tax to 0 and re-suggests the account.
-- **MSL-R17** · Owner, Manager · §4b — Quantity must be more than 0 with at most 3 decimals; for an item whose `allows_decimals` is false it must be a whole number, else MSL-M03 on the line.
+- **MSL-R17** · Owner, Manager · §4b — Quantity must be more than 0 with at most 3 decimals (empty, 0 or too many decimals: MSL-R47); for an item whose `allows_decimals` is false it must be a whole number, else MSL-M03 on the line.
 - **MSL-R18** · Owner, Manager · §4b — A quantity above the item's stock at the sale branch shows MSL-M02 on the line and blocks saving.
 - **MSL-R19** · Owner, Manager · §4b — The form shows subtotal, discount, tax and total (total = subtotal − discount + tax), updated as the user edits, and the total "≈" in the other currency, which the app computes with the exchange rate (the API returns no such field).
 - **MSL-R20** · Owner, Manager · §4b — Discount and tax must be 0 or more and the discount can't exceed the subtotal, else MSL-M04.
@@ -211,6 +214,12 @@ Realises MSL-R31 … MSL-R35.
 - **MSL-R41** · Owner, Manager · §4a — After sign-in the app shows a bottom navigation bar with Sales and Profile; Sales is the start tab (MSL-D17).
 - **MSL-R42** · Owner · §4b — When the business has exactly one active branch, an owner's new sale preselects it (MSL-D13).
 - **MSL-R43** · Owner, Manager · §4b — A unit price below the item's `cost_price` (for KHR, the cost converted with the business exchange rate, not rounded) shows MSL-M18 as a warning on the line; saving stays allowed (MSL-D23).
+- **MSL-R44** · Owner, Manager · §4b — Item search calls `GET /items` with `search`, `status=ACTIVE` and `branchId` = the sale branch, matching name or SKU; when the user picks a result the app reads `GET /items/{id}` and shows on the line the stock from the sale branch's entry in `stock_by_branch` (the server lists every branch the user may read; a missing entry is treated as 0) (MSL-D24).
+- **MSL-R45** · Owner, Manager · §4b — When `POST /sales` fails before the request was sent (no network, DNS failure, connection refused or connect timeout; MSL-D25), the form keeps everything entered and shows MSL-M08 with Retry (MSL-D25).
+- **MSL-R46** · Owner, Manager · §4d — When `POST /sales/{id}/reverse` fails on the connection (before sending or with no answer), the dialog keeps the reason and shows MSL-M08 with Retry; the sale stays as last loaded (MSL-D25).
+- **MSL-R47** · Owner, Manager · §4b — A quantity that is empty or 0 shows MSL-M21 on the line, and one with more than 3 decimals shows MSL-M23; both block saving.
+- **MSL-R48** · Owner, Manager · §4b — A unit price the user empties shows MSL-M22 on the line and blocks saving.
+- **MSL-R49** · Owner, Manager · §4b — Quantity, unit price, discount and tax fields don't accept a minus sign; in a KHR sale prices, discount and tax accept whole riel only, in a USD sale at most 2 decimals (MSL-D26).
 
 ### Fields
 
@@ -222,7 +231,7 @@ Sent in `POST /sales` (code: `SaleRequest`, `SaleLineRequest` in sales-service);
 | `sales.sale_date` | optional, default now; ISO-8601 with offset | MSL-R23 |
 | `sales.source` | `WALK_IN` from mobile | MSL-R25 |
 | `sales.currency` | required; `USD` or `KHR` | MSL-R12 |
-| `sale_items.item_id` | required; an active item | MSL-R13 |
+| `sale_items.item_id` | required; an active item | MSL-R44 |
 | `sale_items.quantity_sold` | required; > 0; at most 9 digits and 3 decimals | MSL-R17 |
 | `sale_items.unit_price` | optional, ≥ 0, at most 13 digits and 2 decimals; default the selling price | MSL-R15 |
 | `sales.discount_amount` | ≥ 0, at most 13 digits and 2 decimals; ≤ subtotal | MSL-R20 |
@@ -243,7 +252,7 @@ Sent in `POST /sales` (code: `SaleRequest`, `SaleLineRequest` in sales-service);
 | **MSL-M05** | — | "This branch has no account in this currency" | MSL-R22 |
 | **MSL-M06** | `201` | "Sale recorded" | MSL-R26 |
 | **MSL-M07** | `409 · BRANCH_INACTIVE` | "This branch is inactive. Choose an active branch" | MSL-R27 |
-| **MSL-M08** | connection error | "Can't reach the server. Check your connection and try again." | MSL-R36 |
+| **MSL-M08** | connection error | "Can't reach the server. Check your connection and try again." | MSL-R36, MSL-R45, MSL-R46 |
 | **MSL-M09** | `503 · DEPENDENCY_UNAVAILABLE` | The server message (e.g. "Finance service is unavailable, please try again") | MSL-R27, MSL-R35 |
 | **MSL-M10** | `422 · ITEM_INACTIVE` | The server message ("'{item_name}' is inactive and can't be sold") | MSL-R27 |
 | **MSL-M11** | `422 · FINANCE_REJECTED` · `403 · BRANCH_ACCESS_DENIED` | The server message (e.g. "You don't have access to this branch") | MSL-R27, MSL-R35 |
@@ -256,6 +265,9 @@ Sent in `POST /sales` (code: `SaleRequest`, `SaleLineRequest` in sales-service);
 | **MSL-M18** | — | "Selling price is below cost" (warning) | MSL-R43 |
 | **MSL-M19** | connection lost after sending | "We couldn't confirm the sale. It may already be recorded — check your sales before trying again." | MSL-R40 |
 | **MSL-M20** | `422 · INVALID_QUANTITY` | The server message (e.g. "Quantities have at most 3 decimals"); not expected, the client checks first | MSL-R27 |
+| **MSL-M21** | — | "Enter a quantity above 0." | MSL-R47 |
+| **MSL-M22** | — | "Enter a price of 0 or more." | MSL-R48 |
+| **MSL-M23** | — | Client: "Quantities have at most 3 decimals" (same text as the server's MSL-M20) | MSL-R47 |
 
 ## 7. Edge cases
 
@@ -268,7 +280,7 @@ Sent in `POST /sales` (code: `SaleRequest`, `SaleLineRequest` in sales-service);
 - **MSL-E07** · State — The owner's chosen branch was deactivated before saving → MSL-M07; the branch picker reloads.
 - **MSL-E08** · State — An item on the form was deactivated before saving → MSL-M10 naming the item; the user removes the line.
 - **MSL-E09** · State — The sale branch has no active account in the chosen currency (branch or business-wide) → MSL-M05; switching currency may offer one.
-- **MSL-E10** · Validation — Quantity 0, negative or with more than 3 decimals → error on the line; save disabled (MSL-R17).
+- ~~**MSL-E10**~~ withdrawn in v1.0.0 — replaced by MSL-E28 (a minus can't be typed). Was: · Validation — Quantity 0, negative or with more than 3 decimals → error on the line; save disabled (MSL-R17).
 - **MSL-E11** · Validation — Discount larger than subtotal → MSL-M04; save disabled (MSL-R20).
 - **MSL-E12** · Validation — The user edits a unit price below the item's cost → MSL-M18 warning on the line; the sale can be saved (MSL-R43).
 - **MSL-E13** · Time — A sale recorded at 23:30 local time appears under that local day in the list and KPI card, not the UTC day (MSL-R39).
@@ -278,7 +290,7 @@ Sent in `POST /sales` (code: `SaleRequest`, `SaleLineRequest` in sales-service);
 - **MSL-E17** · Data — A sale from Shopify, WeBill365 or file import is listed and opens in detail with its source label; it can be reversed under the same rules (MSL-D03). It is not counted on the KPI card (MSL-D18).
 - **MSL-E18** · Money — A KHR sale shows whole riel, and the "≈ USD" line uses the business exchange rate; the stored totals are the server's, never the app's.
 - **MSL-E19** · Device — The app is backgrounded or rotated mid-form → the entered values survive.
-- **MSL-E20** · State — An item has 0 stock at the sale branch → it is shown as "Out of stock" in the search results and, if picked, its line shows MSL-M02 and saving is blocked (MSL-R18).
+- **MSL-E20** · State — An item has 0 stock at the sale branch → it is shown as "Out of stock" in the search results and, if picked, its line shows MSL-M02 and saving is blocked (MSL-R18). The search row's `total_stock` and `stock_status` are for the sale branch because the list is called with `branchId` (MSL-R44).
 - **MSL-E21** · Connectivity — Loading the next list page fails while earlier rows are shown → the rows stay and the end of the list shows MSL-M08 with Retry.
 - **MSL-E22** · Permissions — A manager's own branch is deactivated → `POST /sales` returns `409 BRANCH_INACTIVE`, MSL-M07; there is no branch to switch to, so the form offers only Back.
 - **MSL-E23** · Money — The exchange rate changes between prefill and save → prices are sent as shown; the server computes the stored totals and its USD value with the rate at save time.
@@ -286,6 +298,10 @@ Sent in `POST /sales` (code: `SaleRequest`, `SaleLineRequest` in sales-service);
 - **MSL-E25** · Text — Long item names or references → list rows truncate to 2 lines; the detail shows the full text.
 - **MSL-E26** · Connectivity — The exchange rate can't be loaded → a KHR sale can't be prefilled; the form shows MSL-M08 with Retry and only USD can be chosen until the rate loads.
 - **MSL-E27** · Connectivity — The exchange rate can't be loaded when SaleDetail opens (MSL-R28) → the detail shows without the "≈" line, and the rate load can be retried.
+- **MSL-E28** · Validation — Quantity empty or 0 → MSL-M21; more than 3 decimals → MSL-M23; a minus sign can't be typed; save disabled (MSL-R47, MSL-R49).
+- **MSL-E29** · Connectivity — No network when the user taps "Record sale" → the request is never sent; MSL-M08 with Retry, no "may already be recorded" warning (MSL-R45).
+- **MSL-E30** · Connectivity — The connection drops after a reverse was sent → MSL-M08 with Retry; if the reverse had gone through, the retry answers `409` and the app shows MSL-M16 and the reversed sale (MSL-R46, MSL-R35).
+- **MSL-E31** · Data — An item has no SKU → it is found by name, and its branch stock still comes from `stock_by_branch` (MSL-R44).
 
 ## 8. Data dictionary changes
 
@@ -293,7 +309,7 @@ Sent in `POST /sales` (code: `SaleRequest`, `SaleLineRequest` in sales-service);
 |---|---|---|---|
 | `sales` (all columns) | Add the table to `data-dictionary/` as it is in sales-service V1, V3, V4 migrations | Fields cited in §5 | proposed |
 | `sale_items` (all columns) | Add the table as in sales-service V1 | Fields cited in §5 | proposed |
-| `items`, `item_stocks` | Add the tables (read by the sale form; `allows_decimals`, `selling_price`, `cost_price`) | MSL-R13, MSL-R15, MSL-R17, MSL-R18, MSL-R43 | proposed |
+| `items`, `item_stocks` | Add the tables (read by the sale form; `allows_decimals`, `selling_price`, `cost_price`) | MSL-R44, MSL-R15, MSL-R17, MSL-R18, MSL-R43 | proposed |
 | `businesses.exchange_rate` | Add (identity-service): integer 1–100000, KHR per 1 USD, default 4100; read only here | MSL-R15, MSL-R19 | proposed |
 
 No new or changed columns: the scope needs none. The tables are copied from the existing migrations when the team writes the dictionary.
@@ -307,9 +323,9 @@ No new or changed columns: the scope needs none. The tables are copied from the 
 | `POST /api/v1/sales` | sales-service | Owner, Manager | MSL-R25 … MSL-R27, MSL-R40 | 📝 exists in code, not yet listed |
 | `GET /api/v1/sales/{id}` | sales-service | Owner, Manager | MSL-R28 … MSL-R30 | 📝 exists in code, not yet listed |
 | `POST /api/v1/sales/{id}/reverse` | sales-service | Owner, Manager | MSL-R31 … MSL-R35 | 📝 exists in code, not yet listed |
-| `GET /api/v1/items` | sales-service | Owner, Manager | MSL-R13 | 📝 exists in code, not yet listed |
-| `GET /api/v1/items/{id}` | sales-service | Owner, Manager | MSL-R13, MSL-R15, MSL-R17, MSL-R43 | 📝 exists in code, not yet listed |
-| `GET /api/v1/items/stocks` | sales-service | Owner, Manager | MSL-R13, MSL-R18 | 📝 exists in code, not yet listed |
+| `GET /api/v1/items` | sales-service | Owner, Manager | MSL-R44 | 📝 exists in code, not yet listed |
+| `GET /api/v1/items/{id}` | sales-service | Owner, Manager | MSL-R44, MSL-R15, MSL-R17, MSL-R18, MSL-R43 | 📝 exists in code, not yet listed |
+| ~~`GET /api/v1/items/stocks`~~ | sales-service | — | no longer used (MSL-D24) | — |
 | `GET /api/v1/bank-statements/accounts` | finance-service | Owner, Manager | MSL-R22 | 📝 exists in code, not yet listed |
 | `GET /api/v1/branches` | identity-service (`status` defaults to active) | Owner | MSL-R06, MSL-R11, MSL-R42 | 📝 exists in code, not yet listed |
 | `GET /api/v1/businesses/me/exchange-rate` | identity-service — **new** | Owner, Manager | MSL-R15, MSL-R19, MSL-R43 | 📝 planned |
@@ -326,7 +342,7 @@ The income transaction for a sale is written by sales-service calling finance-se
 - **MSL-Q06** · §2 — Owner's default branch. → MSL-D13 (answered 2026-11-12 by Vuththana)
 - **MSL-Q07** · §5 — Timestamps without an offset: UTC by rule, or change the API? → MSL-D19 (answered 2026-11-12 by Vuththana)
 - **MSL-Q08** · §4a — The KPI card counts completed walk-in sales only; the list shows all. → MSL-D18 (answered 2026-11-12 by Vuththana)
-- **MSL-Q09** · §4b — Where the form gets `allows_decimals` and branch stock. → MSL-D20 (answered 2026-11-12 by Vuththana)
+- **MSL-Q09** · §4b — Where the form gets `allows_decimals` and branch stock. → MSL-D24 (answered 2026-11-12 by Vuththana)
 - **MSL-Q10** · §4b — `409 PERIOD_LOCKED` on a back-dated sale. → MSL-D21 (answered 2026-11-12 by Vuththana)
 - **MSL-Q11** · §4b — Business-wide accounts in "Paid into", and which is suggested. → MSL-D22 (answered 2026-11-12 by Vuththana)
 - **MSL-Q12** · §3 — Source of mobile sales. → MSL-D12 (answered 2026-11-12 by Vuththana)

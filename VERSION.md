@@ -23,6 +23,19 @@ Every change to these docs gets an entry here, newest first. Code repos read it 
 
 ---
 
+## v1.0.0 — 2026-11-12
+**Author:** Vuththana
+
+- `specs/mobile-sales-management/spec.md`: amended and re-approved (✅).
+  - Withdrawn: MSL-R13 → MSL-R44, MSL-D20 → MSL-D24 (branch stock from `GET /items/{id}` `stock_by_branch`; `GET /items/stocks` no longer used), MSL-E10 → MSL-E28.
+  - Added: MSL-D25 (connection failures before sending, and on reverse → MSL-M08 + Retry), MSL-D26 (no minus sign; KHR whole riel), MSL-R45–R49, MSL-M21–M23, MSL-E29–E31.
+- `specs/README.md`: mobile-sales-management ✅ again.
+
+**Impact:**
+- `ledgervision-android-ui`: not built yet; the plan (not yet saved) must use the amended IDs.
+- `ledgervision-identity-service`: none beyond v0.3.0 (exchange-rate endpoint).
+- Other repos: none.
+
 ## v0.3.0 — 2026-11-12
 **Author:** Vuththana
 
