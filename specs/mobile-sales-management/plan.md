@@ -25,7 +25,7 @@ The contract both repos build against. §3.1 is from `api/identity-service.md` (
 
 - **Who:** Owner and Manager. The business is the caller's own (`CurrentUser.businessId`, from the `users` row); no parameters, nothing is trusted from the request. No owner check (unlike `GET /businesses/me`).
 - **200 OK** `message`: `business.exchange_rate.success` ("The business exchange rate."), `data`: `{ "exchange_rate": <integer> }` — `businesses.exchange_rate`, KHR per 1 USD (1–100000).
-- **Errors:** `401` (no or bad token; `ACCOUNT_DEACTIVATED`; `SESSION_REVOKED` — existing `CurrentUserFilter`), `403 BUSINESS_DELETED` (existing filter), `403 ONBOARDING_INCOMPLETE` (existing filter: an owner with no business is stopped here, before the endpoint), `404 NOT_FOUND` (business row missing — only reachable if the row is gone). The app maps any failure to MSL-E26 / MSL-E27; none has its own message.
+- **Errors:** `401` (no or bad token; `ACCOUNT_DEACTIVATED`; `SESSION_REVOKED` — existing `CurrentUserFilter`), `403 BUSINESS_DELETED` (existing filter), `403 ONBOARDING_INCOMPLETE` (existing filter, before the endpoint: an owner with no business, or a manager who hasn't changed the temporary password yet), `404 NOT_FOUND` (business row missing — only reachable if the row is gone). The app maps any failure to MSL-E26 / MSL-E27; none has its own message.
 - **Docs fix:** `api/identity-service.md` says `404 NOT_FOUND` for "the caller has no business yet"; in code the filter answers `403 ONBOARDING_INCOMPLETE` first. The docs part (§2) rewrites the rows as above.
 
 ### 3.2 `GET /api/v1/sales/summary` — existing · MSL-R01, MSL-R06, MSL-R07, MSL-E13
@@ -240,3 +240,4 @@ None.
 
 | Date | Change | Why | Approved by |
 |---|---|---|---|
+| 2026-11-12 | §3.1: `ONBOARDING_INCOMPLETE` also covers a manager before the first-login password change | Found while building T01 | Vuththana |

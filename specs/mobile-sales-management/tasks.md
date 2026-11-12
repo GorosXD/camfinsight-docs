@@ -1,10 +1,10 @@
 # Tasks: Mobile sales management
 
-**Spec:** `MSL` v1.0.0 · **Plan:** approved 2026-11-12 · **Progress:** 0 / 20
+**Spec:** `MSL` v1.0.0 · **Plan:** approved 2026-11-12 · **Progress:** 1 / 20
 
 ## Phase 1 — Contract and data
 
-- [ ] **T01** `identity-service` — `GET /api/v1/businesses/me/exchange-rate` per plan §3.1: `ExchangeRateResponse` record, `BusinessSettingsService.exchangeRate(CurrentUser)` with no owner check, controller method, `business.exchange_rate.success` message; `BusinessExchangeRateIT` (owner 200, manager 200, no token 401, deleted business 403 `BUSINESS_DELETED`). Branch `feature/mobile-sales-management` from `origin/dev` · covers MSL-R15, MSL-R19, MSL-R43 · done when: `./gradlew test --tests '*BusinessExchangeRateIT'` green with tests named `MSL-R15 …` / `MSL-R19 …`, `./gradlew build` passes, endpoint visible in Swagger
+- [x] **T01** `identity-service` — `GET /api/v1/businesses/me/exchange-rate` per plan §3.1: `ExchangeRateResponse` record, `BusinessSettingsService.exchangeRate(CurrentUser)` with no owner check, controller method, `business.exchange_rate.success` message; `BusinessExchangeRateIT` (owner 200, manager 200, no token 401, deleted business 403 `BUSINESS_DELETED`). Branch `feature/mobile-sales-management` from `origin/dev` · covers MSL-R15, MSL-R19, MSL-R43 · done when: `./gradlew test --tests '*BusinessExchangeRateIT'` green with tests named `MSL-R15 …` / `MSL-R19 …`, `./gradlew build` passes, endpoint visible in Swagger · files: `src/main/java/com/ledgervision/identity/business/dto/ExchangeRateResponse.java`, `…/business/service/BusinessSettingsService.java`, `…/business/service/impl/BusinessSettingsServiceImpl.java`, `…/business/controller/BusinessController.java`, `src/main/resources/messages.properties`, `src/test/java/com/ledgervision/identity/business/controller/BusinessExchangeRateIT.java` · note: `./gradlew build` has 3 failures that also fail on unchanged `origin/dev` (separate fix, accepted by Vuththana)
 - [ ] **T02** `docs` [P] — `api/sales-service.md` and `api/finance-service.md` entries for plan §3.2–§3.10 (status 📝 "exists in code"), rows of `api/identity-service.md` corrected per plan §3.1 (`403 ONBOARDING_INCOMPLETE`, `403 BUSINESS_DELETED`, `404` only for a missing row), rows added to `api/README.md` · covers: setup · done when: entries match plan §3 word for word on field names and codes; confirmed by the user
 
 ## Phase 2 — Android on the existing API
