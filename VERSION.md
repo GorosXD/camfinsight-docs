@@ -23,6 +23,20 @@ Every change to these docs gets an entry here, newest first. Code repos read it 
 
 ---
 
+## v0.3.0 — 2026-11-12
+**Author:** Vuththana
+
+- `specs/mobile-sales-management/spec.md`: clarified (MSL-Q01–Q13 → MSL-D12–D23, new MSL-R39–R43, MSL-M18–M20, MSL-E20–E27) and approved (✅).
+- `api/identity-service.md`: new file; `GET /api/v1/businesses/me/exchange-rate` 📝 planned (owner and manager, MSL-D15).
+- `api/README.md`: identity-service added to the services table.
+- `specs/README.md`: mobile-sales-management ✅, stage plan.
+
+**Impact:**
+- `ledgervision-identity-service`: add `GET /api/v1/businesses/me/exchange-rate` (owner and manager).
+- `ledgervision-android-ui`: build the feature (bottom navigation, sales list, record, detail, reverse).
+- `ledgervision-sales-service`, `ledgervision-finance-service`: none (existing endpoints are used as they are).
+- `ledgervision-web-ui`: none.
+
 ## v0.2.0 — 2026-11-12
 **Author:** Vuththana
 

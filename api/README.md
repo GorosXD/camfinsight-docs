@@ -6,6 +6,7 @@ Every endpoint, one file per service (`api/<service>.md`). The web front end bui
 
 | Service | File |
 |---|---|
+| identity-service | [identity-service.md](identity-service.md) |
 
 ## Response envelope (📝 proposed in TRD §3)
 
