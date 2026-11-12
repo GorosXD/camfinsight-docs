@@ -23,6 +23,14 @@ Every change to these docs gets an entry here, newest first. Code repos read it 
 
 ---
 
+## v0.2.0 — 2026-11-12
+**Author:** Vuththana
+
+- `specs/mobile-sales-management/spec.md`: new spec (📝 Draft) — walk-in sales on Android: day KPIs, list, record, view, reverse.
+- `specs/README.md`: added the feature row.
+
+**Impact:** None until approved.
+
 ## v0.1.0 — 2026-11-12
 **Author:** Vuththana
 
