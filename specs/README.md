@@ -35,7 +35,7 @@ Each spec has a prefix (below). `XXX-R` requirement · `XXX-E` edge case · `XXX
 
 | # | Feature | Spec | Prefix | Status | Stage |
 |---|---|---|---|---|---|
-| 1 | Mobile sales management | [spec](mobile-sales-management/spec.md) | MSL | ✅ Approved | plan |
+| 1 | Mobile sales management | [spec](mobile-sales-management/spec.md) | MSL | ✅ Approved | tasks |
 
 <!-- One row per feature, kept by the sdd commands. Status: ✅ Approved · 📝 Draft · ⟳ Amending.
      Stage: spec · plan · tasks · build · verify · qa · shipped. Features not migrated yet are still in ../flow/. -->

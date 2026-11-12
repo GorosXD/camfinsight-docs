@@ -23,6 +23,14 @@ Every change to these docs gets an entry here, newest first. Code repos read it 
 
 ---
 
+## v1.0.1 — 2026-11-12
+**Author:** Vuththana
+
+- `specs/mobile-sales-management/plan.md`: Plan: mobile-sales-management (approved by Vuththana).
+- `specs/README.md`: stage tasks.
+
+**Impact:** None (plan only).
+
 ## v1.0.0 — 2026-11-12
 **Author:** Vuththana
 
