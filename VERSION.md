@@ -23,6 +23,19 @@ Every change to these docs gets an entry here, newest first. Code repos read it 
 
 ---
 
+## v2.3.0 — 2026-11-16
+**Author:** Vuththana
+
+- `api/sales-service.md` (new): sales-service endpoints used by mobile-sales-management (plan §3.2–§3.8), 📝 "exists in code".
+- `api/finance-service.md` (new): `GET /api/v1/bank-statements/accounts` (plan §3.9), 📝 "exists in code".
+- `api/identity-service.md`: `GET /api/v1/businesses/me/exchange-rate` (plan §3.1, new). `GET /api/v1/branches` rows corrected (`403 ONBOARDING_INCOMPLETE`, `403 BUSINESS_DELETED`, `404` only for a missing row).
+- `api/README.md`: sales-service and finance-service rows added.
+
+**Impact:**
+- `ledgervision-identity-service`: new endpoint `GET /api/v1/businesses/me/exchange-rate` (T01).
+- `ledgervision-android-ui`: consumes these endpoints (mobile-sales-management).
+- Other repos: none (the sales and finance entries describe existing code).
+
 ## v2.2.1 — 2026-11-15
 **Author:** Vuththana
 
