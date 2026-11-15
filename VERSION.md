@@ -23,6 +23,14 @@ Every change to these docs gets an entry here, newest first. Code repos read it 
 
 ---
 
+## v2.2.1 — 2026-11-15
+**Author:** Vuththana
+
+- `specs/mobile-sales-management/plan.md`: Plan: mobile-sales-management, updated for spec v2.2.0 (approved by Vuththana). It covers MSL-R53, MSL-R54 and MSL-E38 … E40 in §1, §3.5, §4, §7, §8 and §9. The changes are a three-state `sale_send_state`, `canRetry` on the not-sent banner, and Back blocked while saving.
+- `specs/README.md`: stage tasks.
+
+**Impact:** None (plan only).
+
 ## v2.2.0 — 2026-11-15
 **Author:** Vuththana
 
