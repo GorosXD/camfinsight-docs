@@ -1,6 +1,6 @@
 # Spec: Mobile sales management
 
-**Prefix:** `MSL` · **Status:** ✅ Approved · **Version:** v2.0.0 · **Author:** Vuththana
+**Prefix:** `MSL` · **Status:** ⟳ Amending · **Version:** v2.0.0 · **Author:** Vuththana
 **Tables:** `sales`, `sale_items` (sales-service; not yet in the data dictionary — see §8), read: `items`, `item_stocks`, `businesses.exchange_rate`
 **Endpoints:** [api/identity-service.md § GET /api/v1/businesses/me/exchange-rate](../../api/identity-service.md#get-apiv1businessesmeexchange-rate) (new) · the rest exist in code and are listed in §9
 **Routes (Android destinations):** `SalesList` (owner, manager; opened from Menu → Sales, MSL-D27) · `RecordSale` (owner, manager) · `SaleDetail(saleId)` (owner, manager)
