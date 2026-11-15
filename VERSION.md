@@ -23,6 +23,23 @@ Every change to these docs gets an entry here, newest first. Code repos read it 
 
 ---
 
+## v2.2.0 — 2026-11-15
+**Author:** Vuththana
+
+- `specs/mobile-sales-management/spec.md`: amended and re-approved (✅ v2.2.0).
+  - Added MSL-D33, MSL-R53, MSL-E38 and MSL-E39: after MSL-M19, the sale stays "may already be recorded" until a `201` or a confirmed Discard. A "Try again" that isn't sent or is refused shows its message, without its own Retry, and MSL-M19 again.
+  - Added MSL-D34, MSL-R54 and MSL-E40: Back and the back arrow don't leave the form while `POST /sales` waits.
+  - MSL-Q25 and MSL-Q26 answered.
+  - Clarified, no change of meaning: MSL-R27, MSL-R45, MSL-D25 and MSL-E29 apply to the first send.
+
+**Impact:**
+- `ledgervision-android-ui`:
+  - T13 and T14 are reopened (⟳). After MSL-M19, only a `201` or a Discard clears `sale_unconfirmed_send`. A refused or unsent "Try again" shows MSL-M19 again without the banner Retry. Back is blocked while saving.
+  - The test `MSL-E36 a recorded, refused or not-sent answer clears the marker` must be rewritten.
+  - Plan §3.5, §4, §7, §8 and §9 must be updated.
+  - New tasks are needed for MSL-R53, MSL-R54 and MSL-E38 … E40.
+- Other repos: none.
+
 ## v2.1.1 — 2026-11-15
 **Author:** Vuththana
 
