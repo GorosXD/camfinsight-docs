@@ -1,6 +1,6 @@
 # Tasks: Mobile sales management
 
-**Spec:** `MSL` v2.0.0 · **Plan:** approved 2026-11-12 · **Progress:** 15 / 20
+**Spec:** `MSL` v2.1.0 · **Plan:** approved 2026-11-12 · **Progress:** 15 / 20
 
 ## Phase 1 — Contract and data
 
