@@ -23,6 +23,14 @@ Every change to these docs gets an entry here, newest first. Code repos read it 
 
 ---
 
+## v2.1.1 — 2026-11-15
+**Author:** Vuththana
+
+- `specs/mobile-sales-management/plan.md`: Plan: mobile-sales-management, updated for spec v2.1.0 (approved by Vuththana). §1, §3.5, §4, §7, §8, §9 and §10 cover MSL-R50 … R52 and MSL-E32 … E37, and the tab-bar leftovers are removed.
+- `specs/README.md`: stage tasks.
+
+**Impact:** None (plan only).
+
 ## v2.1.0 — 2026-11-15
 **Author:** Vuththana
 
