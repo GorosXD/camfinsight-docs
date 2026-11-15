@@ -1,6 +1,6 @@
 # Spec: Mobile sales management
 
-**Prefix:** `MSL` · **Status:** ✅ Approved · **Version:** v2.0.0 · **Author:** Vuththana
+**Prefix:** `MSL` · **Status:** ✅ Approved · **Version:** v2.1.0 · **Author:** Vuththana
 **Tables:** `sales`, `sale_items` (sales-service; not yet in the data dictionary — see §8), read: `items`, `item_stocks`, `businesses.exchange_rate`
 **Endpoints:** [api/identity-service.md § GET /api/v1/businesses/me/exchange-rate](../../api/identity-service.md#get-apiv1businessesmeexchange-rate) (new) · the rest exist in code and are listed in §9
 **Routes (Android destinations):** `SalesList` (owner, manager; opened from Menu → Sales, MSL-D27) · `RecordSale` (owner, manager) · `SaleDetail(saleId)` (owner, manager)
@@ -87,6 +87,8 @@ can call (MSL-D15).
 | **MSL-D28** | Leaving after a lost answer | MSL-M19 also offers "Discard", which closes the dialog and the form without sending anything, so a user who found the sale already recorded can leave without recording it twice. Because the sale may not have been recorded, "Discard" asks for confirmation first (MSL-M24, MSL-Q19); after it the user is on the refreshed sales list (MSL-Q15). MSL-M19's text tells the user to choose "Discard" when they find the sale recorded (MSL-Q20). (User, 2026-11-15, amendment) |
 | **MSL-D29** | MSL-M19 is modal | Back and a tap outside don't close MSL-M19; only "Check sales", "Try again" and "Discard" leave it. It survives rotation, backgrounding and process death with the form, so the duplicate-sale guard of MSL-D16 can't be bypassed. Every lost answer, including one on "Try again", shows it again (MSL-Q14, MSL-Q21, MSL-Q22). (User, 2026-11-15, amendment) |
 | **MSL-D30** | Dashboard | The Dashboard is not part of this feature: recording or reversing a sale doesn't refresh it here; it keeps its own refresh rules (MSL-Q18). (User, 2026-11-15, amendment) |
+| **MSL-D31** | Killed while saving | A `POST /sales` still waiting for its answer when the app is killed counts as a lost answer: on return the form is shown with MSL-M19, never with an enabled save and no warning (MSL-Q23). (User, 2026-11-15, amendment) |
+| **MSL-D32** | Leaving MSL-M24 | Back and a tap outside MSL-M24 act as "Cancel": MSL-M24 closes and MSL-M19 shows again; nothing is discarded (MSL-Q24). (User, 2026-11-15, amendment) |
 
 ## 4. Journeys
 
@@ -317,6 +319,8 @@ Sent in `POST /sales` (code: `SaleRequest`, `SaleLineRequest` in sales-service);
 - **MSL-E33** · Device — The device is rotated, or the app backgrounded or killed, while MSL-M19 is shown → on return MSL-M19 is shown again with the form kept (MSL-R52).
 - **MSL-E34** · Connectivity — The user taps "Try again" after MSL-M19 and that answer is lost too → MSL-M19 is shown again, with all three actions (MSL-R40).
 - **MSL-E35** · Actions — The user taps "Discard" in MSL-M24 twice quickly → the form closes once and no request is sent (MSL-R51).
+- **MSL-E36** · Device — The app is killed while the first `POST /sales` is still waiting for its answer → on return the form is shown with MSL-M19 (MSL-R40, MSL-R52, MSL-D31).
+- **MSL-E37** · Actions — The user presses Back or taps outside while MSL-M24 is open → MSL-M24 closes and MSL-M19 shows again; the form is kept (MSL-R51, MSL-D32).
 
 ## 8. Data dictionary changes
 
@@ -371,3 +375,5 @@ The income transaction for a sale is written by sales-service calling finance-se
 - **MSL-Q20** · §6 — Should MSL-M19's text mention "Discard"? → MSL-D28, MSL-M19 (answered 2026-11-15 by Vuththana)
 - **MSL-Q21** · §7 — A lost answer on "Try again" → MSL-D29, MSL-E34 (answered 2026-11-15 by Vuththana)
 - **MSL-Q22** · §7 — MSL-M19 after rotation or process death → MSL-D29 (answered 2026-11-15 by Vuththana)
+- **MSL-Q23** · §7 — The app is killed while the first `POST /sales` is in flight: plain form or MSL-M19 on return? → MSL-D31 (answered 2026-11-15 by Vuththana)
+- **MSL-Q24** · §7 — Back or a tap outside on MSL-M24? → MSL-D32 (answered 2026-11-15 by Vuththana)

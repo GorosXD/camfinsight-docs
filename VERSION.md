@@ -23,6 +23,18 @@ Every change to these docs gets an entry here, newest first. Code repos read it 
 
 ---
 
+## v2.1.0 — 2026-11-15
+**Author:** Vuththana
+
+- `specs/mobile-sales-management/spec.md`: amended and re-approved (✅ v2.1.0).
+  - Added MSL-D31 and MSL-E36: a `POST /sales` still waiting for its answer when the app is killed counts as a lost answer, so the form comes back with MSL-M19.
+  - Added MSL-D32 and MSL-E37: Back or a tap outside MSL-M24 acts as "Cancel".
+  - MSL-Q23 and MSL-Q24 answered.
+
+**Impact:**
+- `ledgervision-android-ui`: the plan in progress for v2.0.0 must include MSL-E36 (save an in-flight marker before sending) and MSL-E37, under T13 and T14 (⟳).
+- Other repos: none.
+
 ## v2.0.0 — 2026-11-15
 **Author:** Vuththana
 
