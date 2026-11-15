@@ -1,9 +1,9 @@
 # Spec: Mobile sales management
 
-**Prefix:** `MSL` · **Status:** ⟳ Amending · **Version:** v1.0.0 · **Author:** Vuththana
+**Prefix:** `MSL` · **Status:** ✅ Approved · **Version:** v2.0.0 · **Author:** Vuththana
 **Tables:** `sales`, `sale_items` (sales-service; not yet in the data dictionary — see §8), read: `items`, `item_stocks`, `businesses.exchange_rate`
 **Endpoints:** [api/identity-service.md § GET /api/v1/businesses/me/exchange-rate](../../api/identity-service.md#get-apiv1businessesmeexchange-rate) (new) · the rest exist in code and are listed in §9
-**Routes (Android destinations):** `SalesList` (owner, manager) · `RecordSale` (owner, manager) · `SaleDetail(saleId)` (owner, manager)
+**Routes (Android destinations):** `SalesList` (owner, manager; opened from Menu → Sales, MSL-D27) · `RecordSale` (owner, manager) · `SaleDetail(saleId)` (owner, manager)
 
 <!--
 HOW TO WRITE THIS FILE (delete nothing below; replace the <placeholders>)
@@ -24,7 +24,7 @@ figures, browse and filter past sales, open a sale, and reverse a wrong one. It 
 through the API Gateway. The one backend change is a read-only exchange-rate endpoint in identity-service that managers
 can call (MSL-D15).
 
-- **In:** a bottom navigation bar with Sales; the day KPI card; sales list with search and filters; record a walk-in sale
+- **In:** the Sales screen, opened from the app menu (MSL-D27); the day KPI card; sales list with search and filters; record a walk-in sale
   (items by name/SKU search, USD or KHR, editable prices, discount, tax, payment method, "paid into" account, sale date);
   sale detail; reverse a sale with a reason.
 - **Out:**
@@ -34,7 +34,10 @@ can call (MSL-D15).
     (MSL-D09), printing or sharing a receipt, Khmer text (MSL-D08), an idempotency key on `POST /sales` (MSL-D16), a
     server-side future-date rule (MSL-D14).
   - Creating or editing items, stock, branches or money accounts: the sale form only reads them.
-- **Depends on:** Android sign-in and session (the existing `auth` feature: the signed-in user's role and `branch_id`).
+  - The app shell (bottom bar, Dashboard, Menu) belongs to the team's shell, not this spec; refreshing the Dashboard
+    after a sale is recorded or reversed is out of scope (MSL-D30).
+- **Depends on:** Android sign-in and session (the existing `auth` feature: the signed-in user's role and `branch_id`),
+  and the team's app shell (Dashboard start screen, bottom bar, Menu) that this feature plugs into (MSL-D27).
   The web walk-in flow (`ITM` in web-ui) is the reference behaviour; its spec text is not in these docs.
 
 ## 2. Roles and branch scope
@@ -69,8 +72,8 @@ can call (MSL-D15).
 | **MSL-D13** | Owner's default branch | An owner's list and KPI card start on "All branches"; a new sale starts with no branch picked, except that the only active branch is preselected. Nothing is remembered between sessions. (User, 2026-11-12, MSL-Q06) |
 | **MSL-D14** | Future dates | Blocked in the app only; sales-service is not changed. (User, 2026-11-12, MSL-Q01) |
 | **MSL-D15** | Exchange rate for managers | identity-service adds a read-only `GET /api/v1/businesses/me/exchange-rate` for owner and manager; the app uses it for KHR prefill and every "≈" amount. (User, 2026-11-12, MSL-Q02) |
-| **MSL-D16** | Lost answer on save | No idempotency key. After a lost answer the app warns that the sale may already be recorded and offers "Check sales" before any retry. (User, 2026-11-12, MSL-Q03) |
-| **MSL-D17** | Navigation | A bottom navigation bar with Sales and Profile; later features add tabs. (User, 2026-11-12, MSL-Q04) |
+| **MSL-D16** | Lost answer on save | No idempotency key. After a lost answer the app warns that the sale may already be recorded and offers "Check sales" before any retry, or "Discard" (MSL-D28). (User, 2026-11-12, MSL-Q03) |
+| ~~**MSL-D17**~~ withdrawn in v2.0.0 — replaced by MSL-D27. Was: | Navigation | A bottom navigation bar with Sales and Profile; later features add tabs. (User, 2026-11-12, MSL-Q04) |
 | **MSL-D18** | KPI card | The card shows the server's figures as returned: USD, completed walk-in sales only, labelled "Walk-in sales today". The list is not limited to match it. (User, 2026-11-12, MSL-Q05, MSL-Q08) |
 | **MSL-D19** | Timestamps | Timestamps the API returns without an offset (`sale_date`, `reversed_at`) are UTC; the app converts them to Asia/Phnom_Penh for display. (User, 2026-11-12, MSL-Q07) |
 | ~~**MSL-D20**~~ withdrawn in v1.0.0 — replaced by MSL-D24. Was: | Item details on the form | When an item is added, the app reads `GET /items/{id}` (for `allows_decimals`, `selling_price`, `cost_price`) and the item's stock at the sale branch from `GET /items/stocks?branchId`. No backend change. (User, 2026-11-12, MSL-Q09) |
@@ -80,6 +83,10 @@ can call (MSL-D15).
 | **MSL-D24** | Item details on the form | When an item is added, the app reads `GET /items/{id}` once: `item` gives `allows_decimals`, `selling_price`, `cost_price`; `stock_by_branch` gives the stock at the sale branch: its entry in `stock_by_branch` (the server lists every branch the user may read; a missing entry is treated as 0). Works for items without a SKU. No backend change. (User, 2026-11-12, amendment) |
 | **MSL-D25** | Failures not covered by MSL-M19 | A `POST /sales` that fails before anything was sent (no network, DNS failure, connection refused) and a `POST /sales/{id}/reverse` that gets no answer both show MSL-M08 with Retry, keeping what was entered. "Not sent" = no network, DNS failure, connection refused or connect timeout; any failure after the connection was made (read timeout, connection reset) on `POST /sales` is MSL-R40. A retried reverse that had gone through answers `409 SALE_ALREADY_REVERSED` (MSL-R35). (User, 2026-11-12, amendment) |
 | **MSL-D26** | Line inputs | Quantity, price, discount and tax fields accept no minus sign; KHR prices, discount and tax are typed in whole riel, USD ones with at most 2 decimals. Missing line texts come from web and the server (MSL-M21 … MSL-M23). (User, 2026-11-12, amendment) |
+| **MSL-D27** | Navigation | The feature follows the team's app shell: after sign-in the app opens the Dashboard; the Sales screen is opened from Menu → Sales as a pushed screen with a back arrow, not as a bottom-bar tab. The pushed Sales screens (list, form, detail) show no bottom bar, as the shell does for every pushed screen (MSL-Q17). Back from a Sales screen reached any other way goes to the Dashboard (MSL-Q16). Profile and settings are reached from the Menu, not from Sales. (User, 2026-11-15, amendment) |
+| **MSL-D28** | Leaving after a lost answer | MSL-M19 also offers "Discard", which closes the dialog and the form without sending anything, so a user who found the sale already recorded can leave without recording it twice. Because the sale may not have been recorded, "Discard" asks for confirmation first (MSL-M24, MSL-Q19); after it the user is on the refreshed sales list (MSL-Q15). MSL-M19's text tells the user to choose "Discard" when they find the sale recorded (MSL-Q20). (User, 2026-11-15, amendment) |
+| **MSL-D29** | MSL-M19 is modal | Back and a tap outside don't close MSL-M19; only "Check sales", "Try again" and "Discard" leave it. It survives rotation, backgrounding and process death with the form, so the duplicate-sale guard of MSL-D16 can't be bypassed. Every lost answer, including one on "Try again", shows it again (MSL-Q14, MSL-Q21, MSL-Q22). (User, 2026-11-15, amendment) |
+| **MSL-D30** | Dashboard | The Dashboard is not part of this feature: recording or reversing a sale doesn't refresh it here; it keeps its own refresh rules (MSL-Q18). (User, 2026-11-15, amendment) |
 
 ## 4. Journeys
 
@@ -92,7 +99,7 @@ sequenceDiagram
     actor U as Owner / Manager
     participant UI as SalesList
     participant API as sales-service
-    U->>UI: open the Sales tab
+    U->>UI: open Menu → Sales
     UI->>API: GET /sales/summary?date=today[&branchId]
     UI->>API: GET /sales?page=0[&filters]
     API-->>UI: 200 summary · 200 page of sales
@@ -100,7 +107,7 @@ sequenceDiagram
     UI->>API: GET /sales?…&page=n
 ```
 
-Realises MSL-R01 … MSL-R08, MSL-R41.
+Realises MSL-R01 … MSL-R08, MSL-R50.
 
 ### 4b. Record a walk-in sale
 
@@ -125,7 +132,7 @@ sequenceDiagram
     UI-->>U: SaleDetail of the new sale
 ```
 
-Realises MSL-R09 … MSL-R27, MSL-R40, MSL-R42 … MSL-R45, MSL-R47 … MSL-R49.
+Realises MSL-R09 … MSL-R27, MSL-R40, MSL-R42 … MSL-R45, MSL-R47 … MSL-R49, MSL-R51, MSL-R52.
 
 ### 4c. View a sale
 
@@ -187,7 +194,7 @@ Realises MSL-R31 … MSL-R35, MSL-R46.
 - **MSL-R23** · Owner, Manager · §4b — Sale date and time default to now and can be changed to any earlier moment in Asia/Phnom_Penh; a future moment can't be picked (MSL-D14); it is sent as ISO-8601 with the `+07:00` offset (the server stores UTC).
 - **MSL-R24** · Owner, Manager · §4b — The save button reads "Record sale · {total}" and is enabled only when branch, at least one line, payment method and account are set and no field shows an error.
 - **MSL-R25** · Owner, Manager · §4b — Tapping save sends one `POST /sales` with `source` `WALK_IN` (MSL-D12); the button shows progress and ignores further taps until the answer.
-- **MSL-R26** · Owner, Manager · §4b — On `201` the app shows MSL-M06 and opens the new sale's detail; going back returns to the refreshed list, not the form.
+- **MSL-R26** · Owner, Manager · §4b — On `201` the app shows MSL-M06 and opens the new sale's detail; going back returns to the refreshed list (the one opened from Menu → Sales, MSL-R50), not the form.
 - **MSL-R27** · Owner, Manager · §4b — On an error answer the form keeps everything entered and shows the message for the code (MSL-M02, M03, M04, M07, M09, M10, M11, M17, M20); `409 PERIOD_LOCKED` shows at the sale date (MSL-D21); a `503` offers Retry.
 
 ### View a sale (§4c)
@@ -210,8 +217,8 @@ Realises MSL-R31 … MSL-R35, MSL-R46.
 - **MSL-R37** · Owner, Manager · all — Money is shown with the currency: USD with 2 decimals and "$", KHR with no decimals and "៛".
 - **MSL-R38** · Owner, Manager · all — Every user-visible string is an Android string resource (MSL-D08).
 - **MSL-R39** · Owner, Manager · all — Timestamps from the API without an offset are read as UTC and shown in Asia/Phnom_Penh (MSL-D19).
-- **MSL-R40** · Owner, Manager · §4b — When `POST /sales` gets no answer (connection lost or timeout after sending), the form stays and shows MSL-M19 with "Check sales" (opens the list in a new screen, the form kept) and "Try again" (MSL-D16).
-- **MSL-R41** · Owner, Manager · §4a — After sign-in the app shows a bottom navigation bar with Sales and Profile; Sales is the start tab (MSL-D17).
+- **MSL-R40** · Owner, Manager · §4b — When `POST /sales` gets no answer (connection lost or timeout after sending), the form stays and shows MSL-M19 with "Check sales" (opens the list in a new screen, the form kept), "Try again" and "Discard" (MSL-R51) (MSL-D16, MSL-D28).
+- ~~**MSL-R41**~~ withdrawn in v2.0.0 — replaced by MSL-R50 (the app follows the team's shell). Was: · Owner, Manager · §4a — After sign-in the app shows a bottom navigation bar with Sales and Profile; Sales is the start tab (MSL-D17).
 - **MSL-R42** · Owner · §4b — When the business has exactly one active branch, an owner's new sale preselects it (MSL-D13).
 - **MSL-R43** · Owner, Manager · §4b — A unit price below the item's `cost_price` (for KHR, the cost converted with the business exchange rate, not rounded) shows MSL-M18 as a warning on the line; saving stays allowed (MSL-D23).
 - **MSL-R44** · Owner, Manager · §4b — Item search calls `GET /items` with `search`, `status=ACTIVE` and `branchId` = the sale branch, matching name or SKU; when the user picks a result the app reads `GET /items/{id}` and shows on the line the stock from the sale branch's entry in `stock_by_branch` (the server lists every branch the user may read; a missing entry is treated as 0) (MSL-D24).
@@ -220,6 +227,9 @@ Realises MSL-R31 … MSL-R35, MSL-R46.
 - **MSL-R47** · Owner, Manager · §4b — A quantity that is empty or 0 shows MSL-M21 on the line, and one with more than 3 decimals shows MSL-M23; both block saving.
 - **MSL-R48** · Owner, Manager · §4b — A unit price the user empties shows MSL-M22 on the line and blocks saving.
 - **MSL-R49** · Owner, Manager · §4b — Quantity, unit price, discount and tax fields don't accept a minus sign; in a KHR sale prices, discount and tax accept whole riel only, in a USD sale at most 2 decimals (MSL-D26).
+- **MSL-R50** · Owner, Manager · §4a — The sales list opens from Menu → Sales as a screen with a back arrow that returns to the screen it was opened from (the Dashboard when Sales was reached another way); the Sales screens show no bottom bar; the app's start screen after sign-in is the Dashboard, not Sales (MSL-D27).
+- **MSL-R51** · Owner, Manager · §4b — MSL-M19 also offers "Discard": it first asks MSL-M24; confirming closes the dialog and the form without sending anything and returns to the sales list, refreshed; "Cancel" goes back to MSL-M19. A sale the server had recorded stays on record (MSL-D28).
+- **MSL-R52** · Owner, Manager · §4b — Back and a tap outside don't close MSL-M19, and MSL-M19 is shown again with the form after rotation, backgrounding or process death (MSL-D29).
 
 ### Fields
 
@@ -263,16 +273,17 @@ Sent in `POST /sales` (code: `SaleRequest`, `SaleLineRequest` in sales-service);
 | **MSL-M16** | `409 · SALE_ALREADY_REVERSED` | "This sale was already reversed" | MSL-R35 |
 | **MSL-M17** | `409 · PERIOD_LOCKED` | The server message | MSL-R27, MSL-R35 |
 | **MSL-M18** | — | "Selling price is below cost" (warning) | MSL-R43 |
-| **MSL-M19** | connection lost after sending | "We couldn't confirm the sale. It may already be recorded — check your sales before trying again." | MSL-R40 |
+| **MSL-M19** | connection lost after sending | "We couldn't confirm the sale. It may already be recorded — check your sales before trying again. If you find it recorded, choose Discard." · buttons "Check sales", "Try again", "Discard" | MSL-R40, MSL-R51, MSL-R52 |
 | **MSL-M20** | `422 · INVALID_QUANTITY` | The server message (e.g. "Quantities have at most 3 decimals"); not expected, the client checks first | MSL-R27 |
 | **MSL-M21** | — | "Enter a quantity above 0." | MSL-R47 |
 | **MSL-M22** | — | "Enter a price of 0 or more." | MSL-R48 |
 | **MSL-M23** | — | Client: "Quantities have at most 3 decimals" (same text as the server's MSL-M20) | MSL-R47 |
+| **MSL-M24** | — | Title "Discard this sale?" · body "It may not have been recorded." · buttons "Cancel", "Discard" | MSL-R51 |
 
 ## 7. Edge cases
 
 - **MSL-E01** · Actions — The user taps "Record sale" twice quickly → one `POST /sales` only (MSL-R25).
-- **MSL-E02** · Connectivity — The connection drops after `POST /sales` was sent and no answer arrives → MSL-M19 with "Check sales" and "Try again" (MSL-R40); a retry after the sale was recorded creates a second sale, which the user can reverse (accepted, MSL-D16).
+- **MSL-E02** · Connectivity — The connection drops after `POST /sales` was sent and no answer arrives → MSL-M19 with "Check sales", "Try again" and "Discard" (MSL-R40); a retry after the sale was recorded creates a second sale, which the user can reverse (accepted, MSL-D16); "Discard" avoids this (MSL-R51).
 - **MSL-E03** · Permissions — A manager opens another branch's sale (e.g. from a stale deep link) → MSL-M12 with "Back to sales".
 - **MSL-E04** · Permissions — A manager's request carries another branch's `branch_id` → `403 BRANCH_ACCESS_DENIED`, MSL-M11; the app never sends one (MSL-R10).
 - **MSL-E05** · Concurrency — Stock is sold elsewhere between picking and save → `422 INSUFFICIENT_STOCK`, MSL-M02; the form stays and the line's stock is re-read.
@@ -285,7 +296,7 @@ Sent in `POST /sales` (code: `SaleRequest`, `SaleLineRequest` in sales-service);
 - **MSL-E12** · Validation — The user edits a unit price below the item's cost → MSL-M18 warning on the line; the sale can be saved (MSL-R43).
 - **MSL-E13** · Time — A sale recorded at 23:30 local time appears under that local day in the list and KPI card, not the UTC day (MSL-R39).
 - **MSL-E14** · Time — The user picks a date, leaves the form open past midnight, then saves → the picked moment is sent, still not in the future.
-- **MSL-E15** · Session — The token expires while the form is open → the existing refresh runs; if refresh fails the user is sent to sign in and the unsaved form is lost.
+- **MSL-E15** · Session — The token expires while the form is open → the existing refresh runs; if refresh fails the user is sent to sign in and the unsaved form is lost; after signing in the app opens the Dashboard (MSL-R50).
 - **MSL-E16** · Empty — The business has no active items → item search shows "No items found"; no sale can be saved.
 - **MSL-E17** · Data — A sale from Shopify, WeBill365 or file import is listed and opens in detail with its source label; it can be reversed under the same rules (MSL-D03). It is not counted on the KPI card (MSL-D18).
 - **MSL-E18** · Money — A KHR sale shows whole riel, and the "≈ USD" line uses the business exchange rate; the stored totals are the server's, never the app's.
@@ -302,6 +313,10 @@ Sent in `POST /sales` (code: `SaleRequest`, `SaleLineRequest` in sales-service);
 - **MSL-E29** · Connectivity — No network when the user taps "Record sale" → the request is never sent; MSL-M08 with Retry, no "may already be recorded" warning (MSL-R45).
 - **MSL-E30** · Connectivity — The connection drops after a reverse was sent → MSL-M08 with Retry; if the reverse had gone through, the retry answers `409` and the app shows MSL-M16 and the reversed sale (MSL-R46, MSL-R35).
 - **MSL-E31** · Data — An item has no SKU → it is found by name, and its branch stock still comes from `stock_by_branch` (MSL-R44).
+- **MSL-E32** · Connectivity — After MSL-M19 the user taps "Check sales", finds the sale recorded, comes back (MSL-M19 is shown again) and taps "Discard" and confirms MSL-M24 → the form closes with no second `POST /sales`; the recorded sale stays in the list (MSL-R51).
+- **MSL-E33** · Device — The device is rotated, or the app backgrounded or killed, while MSL-M19 is shown → on return MSL-M19 is shown again with the form kept (MSL-R52).
+- **MSL-E34** · Connectivity — The user taps "Try again" after MSL-M19 and that answer is lost too → MSL-M19 is shown again, with all three actions (MSL-R40).
+- **MSL-E35** · Actions — The user taps "Discard" in MSL-M24 twice quickly → the form closes once and no request is sent (MSL-R51).
 
 ## 8. Data dictionary changes
 
@@ -337,7 +352,7 @@ The income transaction for a sale is written by sales-service calling finance-se
 - **MSL-Q01** · §4b — Should sales-service also reject future sale dates? → MSL-D14 (answered 2026-11-12 by Vuththana)
 - **MSL-Q02** · §4b — The rate endpoint (`GET /businesses/me`) is owner-only; how does a manager get the rate? → MSL-D15 (answered 2026-11-12 by Vuththana)
 - **MSL-Q03** · §7 — A retry after a lost answer can record a sale twice. → MSL-D16 (answered 2026-11-12 by Vuththana)
-- **MSL-Q04** · §4a — Where does Sales sit in the app? → MSL-D17 (answered 2026-11-12 by Vuththana)
+- **MSL-Q04** · §4a — Where does Sales sit in the app? → MSL-D17 (answered 2026-11-12 by Vuththana; now MSL-D27)
 - **MSL-Q05** · §5 — In which currency is the KPI card? → MSL-D18 (answered 2026-11-12 by Vuththana)
 - **MSL-Q06** · §2 — Owner's default branch. → MSL-D13 (answered 2026-11-12 by Vuththana)
 - **MSL-Q07** · §5 — Timestamps without an offset: UTC by rule, or change the API? → MSL-D19 (answered 2026-11-12 by Vuththana)
@@ -347,3 +362,12 @@ The income transaction for a sale is written by sales-service calling finance-se
 - **MSL-Q11** · §4b — Business-wide accounts in "Paid into", and which is suggested. → MSL-D22 (answered 2026-11-12 by Vuththana)
 - **MSL-Q12** · §3 — Source of mobile sales. → MSL-D12 (answered 2026-11-12 by Vuththana)
 - **MSL-Q13** · §7 — A unit price below cost. → MSL-D23 (answered 2026-11-12 by Vuththana)
+- **MSL-Q14** · §4b — With "Discard" added to MSL-M19 (MSL-R51), may Back or a tap outside the dialog also close it? → MSL-D29 (answered 2026-11-15 by Vuththana)
+- **MSL-Q15** · §4b — Which screen does "Discard" return to? → MSL-D28 (answered 2026-11-15 by Vuththana)
+- **MSL-Q16** · §4a — Where does Back go when Sales was reached other than from the Menu? → MSL-D27 (answered 2026-11-15 by Vuththana)
+- **MSL-Q17** · §4a — Do the pushed Sales screens show the bottom bar? → MSL-D27 (settled 2026-11-15 from the team shell: pushed screens have none)
+- **MSL-Q18** · §1 — Does a sale refresh the Dashboard? → MSL-D30 (answered 2026-11-15 by Vuththana)
+- **MSL-Q19** · §4b — Does "Discard" need a confirmation? → MSL-D28, MSL-M24 (answered 2026-11-15 by Vuththana)
+- **MSL-Q20** · §6 — Should MSL-M19's text mention "Discard"? → MSL-D28, MSL-M19 (answered 2026-11-15 by Vuththana)
+- **MSL-Q21** · §7 — A lost answer on "Try again" → MSL-D29, MSL-E34 (answered 2026-11-15 by Vuththana)
+- **MSL-Q22** · §7 — MSL-M19 after rotation or process death → MSL-D29 (answered 2026-11-15 by Vuththana)

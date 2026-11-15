@@ -23,6 +23,24 @@ Every change to these docs gets an entry here, newest first. Code repos read it 
 
 ---
 
+## v2.0.0 — 2026-11-15
+**Author:** Vuththana
+
+- `specs/mobile-sales-management/spec.md`: amended and re-approved (✅ v2.0.0).
+  - Withdrawn: MSL-D17 and MSL-R41 (Sales/Profile bottom bar) → MSL-D27 and MSL-R50. The feature follows the team's app shell: the Dashboard is the start screen, and Sales opens from Menu → Sales as a pushed screen with no bottom bar.
+  - Added: MSL-D28 to MSL-D30, MSL-R51 and MSL-R52, MSL-M24, MSL-E32 to MSL-E35:
+    - MSL-M19 gets "Discard", confirmed by MSL-M24, which returns to the refreshed list.
+    - MSL-M19 is modal and survives rotation and process death.
+    - Refreshing the Dashboard is out of scope.
+  - Reworded: MSL-D16, MSL-R26, MSL-R40, MSL-E02 and MSL-E15, and the MSL-M19 text (adds "If you find it recorded, choose Discard." and names its buttons). MSL-Q14 to MSL-Q22 are answered.
+
+**Impact:**
+- `ledgervision-android-ui`:
+  - T13, T14 and T16 are reopened (⟳): the M19 Discard flow, the M24 confirmation, M19 modal and restored, and navigation following the dev shell.
+  - Plan §3.5, §4 (bottom bar, SalesList, RecordSale and Navigation rows) and the §5 change rows for `AppDestinations.kt`, `ProfileScreen.kt` and `MainGraph.kt` must be updated.
+  - New tasks are needed for MSL-R50 to R52 and MSL-E32 to E35.
+- Other repos: none.
+
 ## v1.0.0 — 2026-11-12
 **Author:** Vuththana
 
