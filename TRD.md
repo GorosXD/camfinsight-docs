@@ -68,6 +68,7 @@ Each table is written by exactly one service. Other services read it through tha
 
 | Job | Schedule | Owner | Status |
 |---|---|---|---|
+| `push-token-cleanup` — deletes `push_tokens` not seen for 60 days (specs/notification-mobile) | daily 02:45 Asia/Phnom_Penh | identity-service | 🚧 built |
 
 ## 7. Non-functional requirements
 

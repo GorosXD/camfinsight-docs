@@ -23,6 +23,16 @@ Every change to these docs gets an entry here, newest first. Code repos read it 
 
 ---
 
+## v3.1.0 — 2026-11-16
+**Author:** Vuththana
+
+- `data-dictionary/notifications.md`: new; `notifications` (identity V1, owned by NTF) and `push_tokens` (identity V3, specs/notification-mobile §8).
+- `data-dictionary/jsonb-shapes.md`: new; `users.notification_preferences` with the new per-type `push` toggle, and `notifications.params` per alert type.
+- `data-dictionary/README.md`: file rows for both.
+- `TRD.md` §6: the `push-token-cleanup` job (daily 02:45 Asia/Phnom_Penh, identity-service).
+
+**Impact:** None. These document what identity-service already has on `feature/notification-mobile`.
+
 ## v3.0.1 — 2026-11-16
 **Author:** Vuththana
 

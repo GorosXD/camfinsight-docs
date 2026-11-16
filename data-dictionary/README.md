@@ -8,6 +8,8 @@ One file per domain. Add a row when you add a file.
 
 | File | Tables |
 |---|---|
+| [notifications.md](notifications.md) | `notifications`, `push_tokens` |
+| [jsonb-shapes.md](jsonb-shapes.md) | the keys of every `jsonb` field |
 
 ## How a table is written
 
