@@ -35,6 +35,7 @@ Each spec has a prefix (below). `XXX-R` requirement · `XXX-E` edge case · `XXX
 
 | # | Feature | Spec | Prefix | Status | Stage |
 |---|---|---|---|---|---|
+| 3 | Receipts | [spec](receipts/spec.md) | RCT | 📝 Draft | spec |
 
 <!-- One row per feature, kept by the sdd commands. Status: ✅ Approved · 📝 Draft · ⟳ Amending.
      Stage: spec · plan · tasks · build · verify · qa · shipped. Features not migrated yet are still in ../flow/. -->

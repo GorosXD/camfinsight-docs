@@ -23,6 +23,14 @@ Every change to these docs gets an entry here, newest first. Code repos read it 
 
 ---
 
+## v3.1.0 — 2026-11-16
+**Author:** Vuththana
+
+- `specs/receipts/spec.md`: new spec, Receipts (📝 Draft, prefix RCT). It covers saving AI-read or typed-in receipts in finance-service, the possible-duplicate check, posting as an expense, discarding and reversing. It has 37 requirements, 18 edge cases, 16 decisions and 8 open questions.
+- `specs/README.md`: added the Receipts row (stage spec).
+
+**Impact:** None until approved.
+
 ## v0.1.0 — 2026-11-12
 **Author:** Vuththana
 
