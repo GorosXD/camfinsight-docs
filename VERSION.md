@@ -23,6 +23,14 @@ Every change to these docs gets an entry here, newest first. Code repos read it 
 
 ---
 
+## v2.4.0 — 2026-11-16
+**Author:** Vuththana
+
+- `specs/notification-mobile/spec.md`: new spec "Notifications on mobile (center and push)", prefix NTM, 📝 Draft. It has 39 requirements, 28 edge cases, 16 decisions, 21 messages and 4 open questions.
+- `specs/README.md`: row added.
+
+**Impact:** None until approved.
+
 ## v0.1.0 — 2026-11-12
 **Author:** Vuththana
 

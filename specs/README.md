@@ -35,6 +35,7 @@ Each spec has a prefix (below). `XXX-R` requirement · `XXX-E` edge case · `XXX
 
 | # | Feature | Spec | Prefix | Status | Stage |
 |---|---|---|---|---|---|
+| 2 | Notifications on mobile (center and push) | [spec](notification-mobile/spec.md) | NTM | 📝 Draft | spec |
 
 <!-- One row per feature, kept by the sdd commands. Status: ✅ Approved · 📝 Draft · ⟳ Amending.
      Stage: spec · plan · tasks · build · verify · qa · shipped. Features not migrated yet are still in ../flow/. -->
