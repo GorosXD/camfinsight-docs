@@ -23,6 +23,14 @@ Every change to these docs gets an entry here, newest first. Code repos read it 
 
 ---
 
+## v5.1.0 — 2026-11-16
+**Author:** Vuththana
+
+- `api/finance-service.md`: the receipts endpoints as built (🚧 on `feature/receipts`): the 10 receipt endpoints with the receipt and detail objects, the RCT-M03 problem codes, the error tables and their order, the `RECEIPT_NOT_REVERSIBLE` refusal, and the summary's null USD total with no 503. Also the receipt guard on the transactions reverse / PATCH / categorize endpoints, and the existing `GET /bank-statements/transactions/{id}` that the receipt duplicate panel uses.
+- `specs/receipts/tasks.md`: T29 done.
+
+**Impact:** web-ui and finance-service already follow these entries (receipts, `feature/receipts`); no other repo.
+
 ## v5.0.1 — 2026-11-16
 **Author:** Vuththana
 
