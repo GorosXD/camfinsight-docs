@@ -2,11 +2,11 @@
 
 | Status | Method | Path | Who | Spec |
 |---|---|---|---|---|
-| 📝 | POST | /api/v1/notifications/push-tokens | Owner, Manager | [notification-mobile](../specs/notification-mobile/spec.md) NTM-R25, NTM-R29, NTM-R41 |
-| 📝 | POST | /api/v1/notifications/push-tokens/unregister | Owner, Manager | [notification-mobile](../specs/notification-mobile/spec.md) NTM-R25 |
-| 📝 | GET | /api/v1/notifications/preferences (changed: `push`) | Owner, Manager | [notification-mobile](../specs/notification-mobile/spec.md) NTM-R19 … NTM-R21, NTM-R42 |
-| 📝 | PUT | /api/v1/notifications/preferences (changed: `push`) | Owner, Manager | [notification-mobile](../specs/notification-mobile/spec.md) NTM-R22, NTM-R42 |
-| 📝 | POST | /api/v1/auth/sign-out (changed: `push_token`) | Owner, Manager | [notification-mobile](../specs/notification-mobile/spec.md) NTM-R28, NTM-R43 |
+| ✅ | POST | /api/v1/notifications/push-tokens | Owner, Manager | [notification-mobile](../specs/notification-mobile/spec.md) NTM-R25, NTM-R29, NTM-R41 |
+| ✅ | POST | /api/v1/notifications/push-tokens/unregister | Owner, Manager | [notification-mobile](../specs/notification-mobile/spec.md) NTM-R25 |
+| ✅ | GET | /api/v1/notifications/preferences (changed: `push`) | Owner, Manager | [notification-mobile](../specs/notification-mobile/spec.md) NTM-R19 … NTM-R21, NTM-R42 |
+| ✅ | PUT | /api/v1/notifications/preferences (changed: `push`) | Owner, Manager | [notification-mobile](../specs/notification-mobile/spec.md) NTM-R22, NTM-R42 |
+| ✅ | POST | /api/v1/auth/sign-out (changed: `push_token`) | Owner, Manager | [notification-mobile](../specs/notification-mobile/spec.md) NTM-R28, NTM-R43 |
 
 The other notification endpoints (`GET /api/v1/notifications`, `GET …/unread-count`, `POST …/{notification_id}/read`,
 `POST …/{notification_id}/unread`, `POST …/read-all`) exist in code and on the deployed gateway (web spec `notifications`,

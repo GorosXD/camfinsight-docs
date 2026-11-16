@@ -23,6 +23,16 @@ Every change to these docs gets an entry here, newest first. Code repos read it 
 
 ---
 
+## v3.1.1 — 2026-11-16
+**Author:** Vuththana
+
+- `api/identity-service.md`: the five notification-mobile endpoints (push-tokens, push-tokens/unregister, preferences GET/PUT with `push`, sign-out with `push_token`) 📝 → ✅, merged into identity-service `dev` (PR #42).
+- `TRD.md` §6: `push-token-cleanup` ✅ merged.
+- `specs/README.md`: notification-mobile stage `shipped` (android-ui PR #4, identity-service PR #42, both merged into `dev`).
+- `specs/notification-mobile/tasks.md`: T28 and T29 done; T30 (two API QA findings, to amend) and T33 (real FCM) open.
+
+**Impact:** None. The endpoints are now on identity-service `dev`.
+
 ## v3.1.0 — 2026-11-16
 **Author:** Vuththana
 

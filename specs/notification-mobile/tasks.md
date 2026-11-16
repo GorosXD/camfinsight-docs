@@ -1,6 +1,6 @@
 # Tasks: Notifications on mobile (center and push)
 
-**Spec:** `NTM` v3.0.0 · **Plan:** approved 2026-11-16 · **Progress:** 29 / 33
+**Spec:** `NTM` v3.0.0 · **Plan:** approved 2026-11-16 · **Progress:** 31 / 33
 
 ## Phase 1 — Contract and data (identity-service, part A)
 
@@ -40,8 +40,8 @@
 
 ## Phase 4 — Integration, docs and QA
 
-- [ ] **T28** `docs` — `api/identity-service.md`: the new and changed endpoints move from planned to built on the branch, then to merged when the identity pull request reaches `dev` · covers: setup · after T03, T04, T05 · done when: the statuses match the merged code and the user confirms
-- [ ] **T29** `docs` — Data dictionary per spec §8: `push_tokens`, `notifications`, and the `users.notification_preferences` jsonb shape with `push` in `jsonb-shapes.md`; TRD §6 row for `push-token-cleanup` (daily 02:45 Asia/Phnom_Penh, identity-service) · covers: setup · after T02, T09 · done when: dictionary-checker is clean against `V3__create_push_tokens.sql` and the user confirms
+- [x] **T28** `docs` — `api/identity-service.md`: the new and changed endpoints move from planned to built on the branch, then to merged when the identity pull request reaches `dev` · covers: setup · after T03, T04, T05 · done when: the statuses match the merged code and the user confirms
+- [x] **T29** `docs` — Data dictionary per spec §8: `push_tokens`, `notifications`, and the `users.notification_preferences` jsonb shape with `push` in `jsonb-shapes.md`; TRD §6 row for `push-token-cleanup` (daily 02:45 Asia/Phnom_Penh, identity-service) · covers: setup · after T02, T09 · done when: dictionary-checker is clean against `V3__create_push_tokens.sql` and the user confirms
 - [ ] **T30** `identity-service` — Full checks and api-qa on the branch: `./gradlew build`, `bootRun` without a key (logs "push off", sign-in and sign-out still work), and the api-qa scenarios for every NTM-R and NTM-E the backend owns, with a fake sender · covers NTM-R24, NTM-R25, NTM-R29, NTM-R30, NTM-R32, NTM-R33, NTM-R34, NTM-R40, NTM-R41, NTM-R42, NTM-R43, NTM-E22, NTM-E25, NTM-E29, NTM-E38 · after T05, T06, T08, T09 · done when: the build is green and the QA report in `qa-reports/` shows every scenario passed
 - [x] **T31** `android-ui` — Full checks: `./gradlew assembleDebug test checkCode checkKtlint` without `google-services.json`, `e2e/android/run-all.sh` on the `.dev` build, and a review for hard-coded text · covers NTM-R39, NTM-R47 · after T15, T19, T20, T23, T25, T26, T27 · done when: all commands pass and the reviewer finds no user-visible literal outside string resources
 - [x] **T32** `android-ui` — Device QA without real FCM (android-qa), against dev with the identity branch deployed, using `push.fakeToken=true` and the T27 simulator: center, bell, settings, permission prompt, token registration and moving it between two users, sign-out deletion (checked with `select user_id, last_seen_at from identity.push_tokens`), simulated pushes in the foreground, the background, signed out and with the app killed, token rotation, owner and manager runs · covers NTM-R01, NTM-R02, NTM-R03, NTM-R04, NTM-R05, NTM-R07, NTM-R09, NTM-R10, NTM-R11, NTM-R13, NTM-R14, NTM-R15, NTM-R16, NTM-R19, NTM-R20, NTM-R22, NTM-R23, NTM-R25, NTM-R26, NTM-R28, NTM-R29, NTM-R35, NTM-R36, NTM-R37, NTM-R38, NTM-R44, NTM-R45, NTM-R46, NTM-E05, NTM-E07, NTM-E08, NTM-E09, NTM-E13, NTM-E16, NTM-E17, NTM-E18, NTM-E19, NTM-E24, NTM-E29, NTM-E30, NTM-E37, NTM-E41 · after T30, T31 · done when: the QA report in `qa-reports/` shows every scenario passed or lists its findings
