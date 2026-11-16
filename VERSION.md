@@ -23,6 +23,15 @@ Every change to these docs gets an entry here, newest first. Code repos read it 
 
 ---
 
+## v3.0.1 — 2026-11-16
+**Author:** Vuththana
+
+- `specs/notification-mobile/plan.md`: Plan: notification-mobile (approved by Vuththana). It covers identity-service parts A and B and android-ui parts C, D and E.
+  - **New dependencies approved:** Firebase BoM 34.x with firebase-messaging and the google-services plugin 4.4.x (android); firebase-admin 9.x (identity).
+- `specs/README.md`: stage tasks.
+
+**Impact:** None (plan only).
+
 ## v3.0.0 — 2026-11-16
 **Author:** Vuththana
 
