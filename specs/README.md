@@ -35,6 +35,7 @@ Each spec has a prefix (below). `XXX-R` requirement · `XXX-E` edge case · `XXX
 
 | # | Feature | Spec | Prefix | Status | Stage |
 |---|---|---|---|---|---|
+| 1 | Mobile sales management | [spec](mobile-sales-management/spec.md) | MSL | ✅ Approved | shipped |
 | 3 | Receipts | [spec](receipts/spec.md) | RCT | ✅ Approved | shipped |
 
 <!-- One row per feature, kept by the sdd commands. Status: ✅ Approved · 📝 Draft · ⟳ Amending.

@@ -6,6 +6,7 @@ size, total_elements, total_pages }`.
 
 | Status | Method | Path | Who | Spec |
 |---|---|---|---|---|
+| 📝 | GET | /api/v1/bank-statements/accounts (existing; entry written from the code) | Owner, Manager | [mobile-sales-management](../specs/mobile-sales-management/spec.md) MSL-R22 |
 | 🚧 | POST | /api/v1/financial-records/receipts | Owner, Manager | [receipts](../specs/receipts/spec.md) RCT-R01–R08, R41–R43, R57, R58 |
 | 🚧 | GET | /api/v1/financial-records/receipts | Owner, Manager | RCT-R30–R32, R50 |
 | 🚧 | GET | /api/v1/financial-records/receipts/summary | Owner, Manager | RCT-R33, E31, E33 |
@@ -220,3 +221,17 @@ the in-scope find; PATCH before any change; categorize resolves every id first a
 | Status | `code` | When |
 |---|---|---|
 | 409 | `TRANSACTION_NOT_REVERSIBLE` | "Change this from its receipt" (RCT-M28, RCT-R47, RCT-R48, RCT-R52, RCT-R53) |
+
+## Accounts
+
+Used by [mobile-sales-management](../specs/mobile-sales-management/spec.md). The endpoint exists in code on `dev`; its shape is taken from the code (finance-service `AccountController`, `AccountResponse`). 📝 here means "exists in code, entry written from the code".
+
+### GET /api/v1/bank-statements/accounts
+
+Query: `branchId` (a manager is always forced to their own branch), `status` (`ACTIVE` …).
+
+`200 OK`, `data`: a list (not paged), ordered by `account_name`, of the branch's accounts **and** the business-wide ones: `{ financial_account_id, account_name, account_type, currency, starting_balance, current_balance, usd_equivalent, is_business_wide, is_active, branch_id, branch_name, created_at, updated_at }`. A manager gets business-wide accounts without their balances (`null`).
+
+Shared errors only (`401`, `403`).
+
+The income transaction for a sale is written by sales-service calling finance-service internally (`FeignFinanceGateway.recordSaleIncome`); clients never write it.
