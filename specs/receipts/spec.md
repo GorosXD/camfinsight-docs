@@ -1,6 +1,6 @@
 # Spec: Receipts
 
-**Prefix:** `RCT` · **Status:** ✅ Approved · **Version:** v4.0.0 · **Author:** Vuththana
+**Prefix:** `RCT` · **Status:** ⟳ Amending · **Version:** v4.0.0 · **Author:** Vuththana
 **Tables:** [`receipts`](../../data-dictionary/finance.md#receipts), [`receipt_lines`](../../data-dictionary/finance.md#receipt_lines), [`documents`](../../data-dictionary/finance.md#documents) · reads `financial_accounts`, `business_categories`, `transactions`, `bank_transactions`, `change_logs`
 **Endpoints:** [api/finance-service.md](../../api/finance-service.md) · listed in §9
 **Routes:** `/financial-records/receipts` (Owner, Manager) · `/financial-records/receipts/upload` (Owner, Manager) · `/financial-records/receipts/new` (Owner, Manager) · `/financial-records/receipts/[id]` (Owner, Manager)
