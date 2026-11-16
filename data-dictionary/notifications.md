@@ -32,7 +32,7 @@ The Firebase Cloud Messaging token of one phone signed in to the app.
 |---|---|---|---|---|---|---|---|
 | `push_token_id` | uuid |  | Y | PK |  |  | auto generated |
 | `user_id` | uuid |  | Y | FK |  | `users` (identity) | the user signed in on the phone; a token registered by another user moves to that user |
-| `token` | text |  | Y |  |  |  | the FCM registration token; unique (one row per phone) |
+| `token` | text | 4096 | Y |  |  |  | the FCM registration token; unique (one row per phone); at most 4096 characters (`ck_push_tokens_token_length`, identity V4) |
 | `platform` | enum |  | Y |  |  |  | `ANDROID` |
 | `created_at` | timestamp |  | Y |  | `current_timestamp` |  |  |
 | `last_seen_at` | timestamp |  | Y |  | `current_timestamp` |  | updated on every registration; rows not seen for 60 days are deleted by the `push-token-cleanup` job |
