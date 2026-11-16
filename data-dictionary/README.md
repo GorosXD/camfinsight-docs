@@ -8,6 +8,8 @@ One file per domain. Add a row when you add a file.
 
 | File | Tables |
 |---|---|
+| [finance.md](finance.md) | receipts, receipt_lines, documents |
+| [jsonb-shapes.md](jsonb-shapes.md) | documents.extraction |
 
 ## How a table is written
 
