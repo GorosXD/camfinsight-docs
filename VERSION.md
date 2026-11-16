@@ -23,6 +23,25 @@ Every change to these docs gets an entry here, newest first. Code repos read it 
 
 ---
 
+## v3.0.0 — 2026-11-16
+**Author:** Vuththana
+
+- `specs/notification-mobile/spec.md`: amended and re-approved (✅ v3.0.0), answering the planner's questions.
+  - Withdrawn: NTM-D05 → D32, NTM-R21 → R46, NTM-M06 → M29. The Telegram note opens Settings → Telegram alerts.
+  - Added:
+    - D29 / R47: the debug app id is `com.kshrd.starter.dev`, the release one `com.kshrd.starter`.
+    - D30 / R44: Push is disabled while In-app is off.
+    - D31 / R45 / M30: the server's field message shows on a refused save.
+    - D33: sign-out answers `200` as today; the push token is deleted only after an accepted logout. R43 is updated to match.
+    - E38 … E41.
+  - Wording: NTM-M09 code `NOTIFICATION_NOT_FOUND`; NTM-R15 "loaded cards"; references to withdrawn IDs updated.
+- `api/identity-service.md`: the sign-out entry corrected to match NTM-D33.
+
+**Impact:**
+- `ledgervision-android-ui`: the debug `applicationIdSuffix = ".dev"`, the Push/In-app switch rules, field-error messages, and the Telegram note linking to Telegram alerts.
+- `ledgervision-identity-service`: Keycloak logout must report acceptance; the sign-out push-token deletion depends on it.
+- No plan or tasks were saved yet, so nothing goes stale.
+
 ## v2.5.0 — 2026-11-16
 **Author:** Vuththana
 

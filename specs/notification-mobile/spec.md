@@ -1,6 +1,6 @@
 # Spec: Notifications on mobile (center and push)
 
-**Prefix:** `NTM` · **Status:** ⟳ Amending · **Version:** v2.5.0 · **Author:** Vuththana
+**Prefix:** `NTM` · **Status:** ✅ Approved · **Version:** v3.0.0 · **Author:** Vuththana
 **Tables:** `notifications`, `users.notification_preferences` (identity-service; not yet in the data dictionary — see §8), new `push_tokens` (§8)
 **Endpoints:** identity-service `/api/v1/notifications/**` (exist in code, not yet in `api/`) · new ones listed in §9
 **Routes (Android destinations):** `Notifications` (owner, manager) · `NotificationSettings` (owner, manager)
@@ -34,7 +34,7 @@ and adds device-token storage and an FCM sender in identity-service.
     (prefix `NTF`), not in this docs repo; this spec cites its rules and the identity-service code.
   - New alert types (e.g. "invoice paid", "review signed off" seen in designs) — a later NTF change (NTM-D06).
   - Opening the related record (bill, item, statement) from a notification or push (NTM-D04).
-  - Linking or unlinking Telegram on mobile (shown read-only, NTM-D05); email delivery settings.
+  - Linking or unlinking Telegram on mobile (shown read-only, NTM-D32); email delivery settings.
   - iOS, the web app's push, notification sounds per type, quiet hours.
 - **Depends on:** Android sign-in and session (`auth`), the team's app shell (Dashboard, Menu → Settings), the
   `NTF` rules for recipients and branch scope (NTF-R25 … NTF-R29), in-app lock (NTF-D09) and owner branch filter
@@ -62,7 +62,7 @@ and adds device-token storage and an FCM sender in identity-service.
 | **NTM-D02** | Tabs | All / Unread / Financial / Stock as in Figma 18.21: Unread = `unread=true`, Financial = `feed=FINANCIAL`, Stock = `alert_type=STOCK` (a stock alert also appears under Financial). No API change. (User, 2026-11-16) |
 | **NTM-D03** | Push per type | Push is a third channel per alert type next to In-app and Telegram, chosen by the user in the settings screen and stored with the existing preferences. (User, 2026-11-16) |
 | **NTM-D04** | Tapping | Tapping a notification card marks it read; tapping a push opens the notification center and marks that notification read. Neither opens the related record in this version. (User, 2026-11-16) |
-| **NTM-D05** | Settings on mobile | A "Notifications" row in the Preferences section of the existing Settings screen (Menu → Settings opens `Profile`) lists the caller's alert types with In-app (shown locked on where the server locks it, NTF-D09), Push, and Telegram as a read-only status ("Set up on the web" when not linked). (User, 2026-11-16) |
+| ~~**NTM-D05**~~ withdrawn in v3.0.0 — replaced by NTM-D32 (the Telegram note opens Settings → Telegram alerts). Was: | Settings on mobile | A "Notifications" row in the Preferences section of the existing Settings screen (Menu → Settings opens `Profile`) lists the caller's alert types with In-app (shown locked on where the server locks it, NTF-D09), Push, and Telegram as a read-only status ("Set up on the web" when not linked). (User, 2026-11-16) |
 | **NTM-D06** | Alert types | The app shows the alert types the server sends; an unknown future type is shown with its `message` and a generic icon and title. Missing types from the design are a later NTF change. (User, 2026-11-16) |
 | **NTM-D07** | Push text | A push shows only the alert type's title and the branch name ("All branches" for business-wide), never amounts, names or the `message`, because it can appear on a locked screen. (User, 2026-11-16) |
 | **NTM-D08** | Unread count | The Dashboard bell shows the unread total from `GET /notifications/unread-count`, refreshed when the Dashboard opens, when the app returns to the foreground and when a push arrives while the app is open. (User, 2026-11-16) |
@@ -86,6 +86,11 @@ and adds device-token storage and an FCM sender in identity-service.
 | **NTM-D26** | Bell | This feature adds the bell with its badge to the team's `DashboardHeader` (the Dashboard owner is told). (User, 2026-11-16, NTM-Q12) |
 | **NTM-D27** | Permission denied | With the phone's notification permission denied, Push switches stay editable (the choice is stored) and NTM-M07 shows above them. (User, 2026-11-16, NTM-Q13) |
 | **NTM-D28** | Older clients | A `PUT /preferences` without `push` keeps each type's stored `push` (or its default), so the web app works unchanged. (User, 2026-11-16, NTM-Q14) |
+| **NTM-D29** | App ids | Debug builds use the application id `com.kshrd.starter.dev` (the dev app in the team Firebase project), release builds `com.kshrd.starter` (the prod app), so both apps of NTM-D16 can be registered; both can be installed side by side. (User, 2026-11-16, plan Q1) |
+| **NTM-D30** | Push needs In-app | While a type's In-app is off, its Push switch is disabled and its stored value is kept; the server accepts any combination. (User, 2026-11-16, plan Q2) |
+| **NTM-D31** | Refused save | When a save is refused with a field error for a type (e.g. `telegram_needs_in_app`), the switch reverts and the server's field message for that type shows, not the generic envelope message. (User, 2026-11-16, plan Q3) |
+| **NTM-D32** | Settings on mobile | A "Notifications" row in the Preferences section of the existing Settings screen (Menu → Settings opens `Profile`) lists the caller's alert types with In-app (shown locked on where the server locks it, NTF-D09), Push, and Telegram as a read-only status on this screen; when Telegram isn't linked, a note (NTM-M29) opens the existing Settings → Telegram alerts screen. (User, 2026-11-16, plan Q4) |
+| **NTM-D33** | Sign-out answer | `POST /auth/sign-out` keeps answering `200` as today, also for a refresh token Keycloak rejects; the push token is deleted only when Keycloak accepted the logout. (User, 2026-11-16, plan Q5) |
 
 ## 4. Journeys
 
@@ -145,7 +150,7 @@ sequenceDiagram
     I-->>S: 200 / 400
 ```
 
-Realises NTM-R19 … NTM-R24, NTM-R42.
+Realises NTM-R19 … NTM-R24, NTM-R42, NTM-R44 … NTM-R46.
 
 ### 4d. Register the phone for push
 
@@ -210,7 +215,7 @@ Realises NTM-R30 … NTM-R37, NTM-R40.
 
 - **NTM-R13** · Owner, Manager · §4b — Tapping an unread card marks it read at once on screen and sends `POST /notifications/{id}/read`; on failure the card returns to unread and NTM-M03 shows. On the Unread tab the card stays, shown as read, until the next reload (NTM-D25).
 - **NTM-R14** · Owner, Manager · §4b — Each read card offers "Mark as unread", which sends `POST /notifications/{id}/unread` and marks the card unread; on failure it returns to read and NTM-M03 shows.
-- **NTM-R15** · Owner, Manager · §4b — The top bar's "Mark all read" sends `POST /notifications/read-all` with the current tab's `feed` or `alert_type` and the owner's `branch_id`, marks the affected cards read and shows NTM-M04 with Undo; it is disabled when the current view has no unread notification (NTM-D10, NTM-D12).
+- **NTM-R15** · Owner, Manager · §4b — The top bar's "Mark all read" sends `POST /notifications/read-all` with the current tab's `feed` or `alert_type` and the owner's `branch_id`, marks the affected cards read and shows NTM-M04 with Undo; it is disabled when no loaded card of the current tab is unread (NTM-D10, NTM-D12).
 - **NTM-R16** · Owner, Manager · §4b — Undo sends `POST /notifications/{id}/unread` for each notification that was unread on the loaded pages before "Mark all read"; if any call fails, NTM-M05 shows (NTM-D18).
 - **NTM-R17** · Owner, Manager · §4b — Every read, unread or mark-all action reloads the unread count, so the Unread tab label and the Dashboard badge stay in step.
 - **NTM-R18** · Owner, Manager · §4b — Tapping a card does nothing besides marking it read (NTM-D04).
@@ -219,7 +224,7 @@ Realises NTM-R30 … NTM-R37, NTM-R40.
 
 - **NTM-R19** · Owner, Manager · §4c — The Settings screen (Menu → Settings) shows a "Notifications" row in its Preferences section, which opens the notification settings screen with the alert types returned by `GET /notifications/preferences`, each with its title (NTM-M10 … NTM-M20, NTM-M22).
 - **NTM-R20** · Owner, Manager · §4c — Each type has an In-app switch, shown on and disabled when the server marks it `locked` (NTF-D09), and a Push switch.
-- **NTM-R21** · Owner, Manager · §4c — The screen shows Telegram per type as "On" / "Off" and, when `telegram_linked` is false, the note NTM-M06; Telegram can't be changed on mobile (NTM-D05).
+- ~~**NTM-R21**~~ withdrawn in v3.0.0 — replaced by NTM-R46. Was: · Owner, Manager · §4c — The screen shows Telegram per type as "On" / "Off" and, when `telegram_linked` is false, the note NTM-M06; Telegram can't be changed on mobile (NTM-D32).
 - **NTM-R22** · Owner, Manager · §4c — Changing a switch saves at once with `PUT /notifications/preferences` carrying every type's `in_app`, `telegram` and `push`; after a save the app reloads the matrix (NTM-D20); on failure the switch returns to its previous value and NTM-M03 or the server message shows.
 - **NTM-R23** · Owner, Manager · §4c — When the phone blocks notifications for the app, the screen shows NTM-M07 with "Open settings" (the phone's app notification settings) above the list; Push switches stay editable and their choice is saved (NTM-D27).
 - **NTM-R24** · Owner, Manager · §4c — No notification and no push exist for a type with In-app off: the server creates the notification only when In-app is on, and push follows it.
@@ -250,7 +255,11 @@ Realises NTM-R30 … NTM-R37, NTM-R40.
 - **NTM-R40** · Server · §4e — The push is sent after the notification's transaction commits (as Telegram delivery is), and only for a notification that was newly created, so a redelivered alert event sends no second push.
 - **NTM-R41** · Server · §4d — Every registration refreshes the token's `last_seen_at`; a daily background job (identity-service `job/`, with ShedLock like the notification purge job, TRD §6) deletes tokens not seen for 60 days (NTM-D23).
 - **NTM-R42** · Server · §4c — The preferences store a `push` value per alert type; a type with no stored `push` reads as its Telegram default (NTM-D17), and a `PUT` without `push` keeps the stored values (NTM-D28).
-- **NTM-R43** · Server · §4d — `POST /auth/sign-out` accepts an optional `push_token`; when given, that token is deleted for the signing-out user (NTM-D22).
+- **NTM-R43** · Server · §4d — `POST /auth/sign-out` accepts an optional `push_token`; when given, that token is deleted for the signing-out user (NTM-D22), once Keycloak has accepted the logout (NTM-D33); a refresh token Keycloak rejects, including an already ended session (`invalid_grant`), deletes nothing, and the token stays until a later registration moves it or the 60-day job removes it (NTM-D21, NTM-D23).
+- **NTM-R44** · Owner, Manager · §4c — While a type's In-app switch is off, its Push switch is disabled and keeps its stored value (NTM-D30).
+- **NTM-R45** · Owner, Manager · §4c — When `PUT /notifications/preferences` is refused with a field error for a type, the changed switch reverts and that field error's message shows (e.g. "Turn on in-app alerts to get them on Telegram.") (NTM-D31).
+- **NTM-R46** · Owner, Manager · §4c — The screen shows Telegram per type as "On" / "Off", read-only on this screen; when `telegram_linked` is false it shows the note NTM-M29, which opens Settings → Telegram alerts (NTM-D32).
+- **NTM-R47** · Owner, Manager · all — Debug builds run as `com.kshrd.starter.dev` and release builds as `com.kshrd.starter` (NTM-D29).
 
 ### Fields
 
@@ -275,10 +284,10 @@ Realises NTM-R30 … NTM-R37, NTM-R40.
 | **NTM-M03** | connection error | "Can't reach the server. Check your connection and try again." | NTM-R13, NTM-R14, NTM-R22, NTM-R38 |
 | **NTM-M04** | `200` read-all | "{n} marked as read" · action "Undo" | NTM-R15 |
 | **NTM-M05** | — | "Couldn't undo. Mark them unread one by one." | NTM-R16 |
-| **NTM-M06** | — | "Telegram isn't linked. Set it up on the web." | NTM-R21 |
+| ~~**NTM-M06**~~ withdrawn in v3.0.0 — replaced by NTM-M29. Was: | — | "Telegram isn't linked. Set it up on the web." | NTM-R21 |
 | **NTM-M07** | — | "Notifications are off for CamFinSight on this phone." · action "Open settings" | NTM-R23 |
 | **NTM-M08** | — | Channel name "Alerts" | NTM-R37 |
-| **NTM-M09** | `404 · NOT_FOUND` | "This notification is no longer available." | NTM-E06 |
+| **NTM-M09** | `404 · NOTIFICATION_NOT_FOUND` | "This notification is no longer available." | NTM-E06 |
 | **NTM-M10** | — | `DUE_DATE` title — "Payment due" | NTM-R06, NTM-R31 |
 | **NTM-M11** | — | `STOCK` — "Stock running low" | NTM-R06, NTM-R31 |
 | **NTM-M12** | — | `IMPORT` — "Import finished" | NTM-R06, NTM-R31 |
@@ -296,8 +305,10 @@ Realises NTM-R30 … NTM-R37, NTM-R40.
 | **NTM-M24** | — | Actions "Mark all read", "Mark as unread" | NTM-R14, NTM-R15 |
 | **NTM-M25** | — | Branch labels "All branches" and the suffix " (inactive)" | NTM-R04, NTM-R07, NTM-R31 |
 | **NTM-M26** | — | Day headers "Today · {d MMM}", "Yesterday · {d MMM}", "{d MMM yyyy}"; badge cap "99+" | NTM-R01, NTM-R05 |
-| **NTM-M27** | — | Settings labels "Notifications", "In-app", "Push", "Telegram", "On", "Off" | NTM-R19 … NTM-R21 |
+| **NTM-M27** | — | Settings labels "Notifications", "In-app", "Push", "Telegram", "On", "Off" | NTM-R19, NTM-R20, NTM-R46 |
 | **NTM-M28** | server error | The server's `message` for any other error, shown as is with Retry | NTM-R38 |
+| **NTM-M29** | — | "Telegram isn't linked. Connect it in Settings → Telegram alerts." (opens that screen) | NTM-R46 |
+| **NTM-M30** | `400 · VALIDATION_FAILED` field error | The server's field message for the refused type, e.g. "Turn on in-app alerts to get them on Telegram." | NTM-R45 |
 
 ## 7. Edge cases
 
@@ -338,6 +349,10 @@ Realises NTM-R30 … NTM-R37, NTM-R40.
 - **NTM-E35** · Push — The user turns Push off for a type while an earlier push for it is still in the phone's tray → it stays; tapping it works (NTM-R35).
 - **NTM-E36** · Text — A long branch name → the card shows it in full on its own line; a push shows it shortened by the phone.
 - **NTM-E37** · Push — A push for a notification of another user (stale token on a shared phone) is tapped → the read call answers `404` (never `403`, NTF-E20) and is ignored; the center opens.
+- **NTM-E38** · Session — Sign-out with a refresh token Keycloak rejects → `200` as today; no push token is deleted; the phone's FCM token is still deleted (NTM-D33, NTM-R28).
+- **NTM-E39** · Push — The read call made when a push is opened fails for a reason other than `404` (e.g. offline) → nothing extra shows; the card stays unread and the center shows its own state.
+- **NTM-E40** · State — On a tab whose loaded cards are all read, "Mark all read" is disabled, even if older pages not yet loaded may hold unread ones (NTM-R15).
+- **NTM-E41** · Settings — The user turns In-app off for a type whose Telegram is on → the server refuses (`telegram_needs_in_app`), the switch reverts and NTM-M30 shows (NTM-R45).
 
 ## 8. Data dictionary changes
 
@@ -356,7 +371,7 @@ Realises NTM-R30 … NTM-R37, NTM-R40.
 | `POST /api/v1/notifications/{notification_id}/read` | identity-service | Owner, Manager | NTM-R13, NTM-R35 | 📝 exists in code, not yet listed |
 | `POST /api/v1/notifications/{notification_id}/unread` | identity-service | Owner, Manager | NTM-R14, NTM-R16 | 📝 exists in code, not yet listed |
 | `POST /api/v1/notifications/read-all` | identity-service | Owner, Manager | NTM-R15 | 📝 exists in code, not yet listed |
-| `GET /api/v1/notifications/preferences` | identity-service — **changed** (adds `push`) | Owner, Manager | NTM-R19 … NTM-R21 | 📝 planned |
+| `GET /api/v1/notifications/preferences` | identity-service — **changed** (adds `push`) | Owner, Manager | NTM-R19, NTM-R20, NTM-R46 | 📝 planned |
 | `PUT /api/v1/notifications/preferences` | identity-service — **changed** (`AlertChannelsRequest` gains optional `push`, same strict-boolean rule, kept when absent; `AlertChannelsResponse` gains `push`) | Owner, Manager | NTM-R22, NTM-R42 | 📝 planned |
 | `POST /api/v1/notifications/push-tokens` | identity-service — **new** | Owner, Manager | NTM-R25, NTM-R27, NTM-R29, NTM-R41 | 📝 planned |
 | `POST /api/v1/notifications/push-tokens/unregister` | identity-service — **new** | Owner, Manager | NTM-R25 | 📝 planned |

@@ -49,5 +49,6 @@ The rest of the contract is unchanged: the whole matrix, last save wins.
 ### POST /api/v1/auth/sign-out — change
 
 Body gains an optional `push_token`. When given, that token is deleted for the signing-out user (NTM-D22). The call
-still needs only the refresh token. A `push_token` that isn't the user's, or doesn't exist, is ignored (the sign-out
-still answers as today). An invalid refresh token gives the existing sign-out error and deletes no push token.
+still needs only the refresh token. A `push_token` that isn't the user's, or doesn't exist, is ignored. The token is
+deleted only when Keycloak accepted the logout; sign-out still answers `200` as today, also for a refresh token
+Keycloak rejects, which deletes no push token (NTM-D33). Implementation note: Keycloak logout must report whether it was accepted; today it returns nothing and swallows failures.
