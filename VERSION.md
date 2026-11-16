@@ -23,6 +23,14 @@ Every change to these docs gets an entry here, newest first. Code repos read it 
 
 ---
 
+## v4.0.1 — 2026-11-16
+**Author:** Vuththana
+
+- `specs/receipts/plan.md`: Plan: receipts (approved by Vuththana). It covers finance-service parts A–E (the receipts backend and the receipt guard in the transactions endpoints) and web-ui parts F–H. Both repos branch from `dev-cleaned`, with PRs into `dev-cleaned`.
+- `specs/README.md`: stage tasks.
+
+**Impact:** None (plan only).
+
 ## v4.0.0 — 2026-11-16
 **Author:** Vuththana
 
