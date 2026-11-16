@@ -23,6 +23,14 @@ Every change to these docs gets an entry here, newest first. Code repos read it 
 
 ---
 
+## v5.0.1 — 2026-11-16
+**Author:** Vuththana
+
+- `specs/receipts/plan.md`: Plan: receipts, updated for spec v5.0.0 (approved by Vuththana). The changes are the reverse refusal order and `RECEIPT_NOT_REVERSIBLE`, the PUT check order and the no-change rule, summary totals that are null without a rate, the reference on a reversed receipt, and the §7 file list brought in line with the working trees.
+- `specs/README.md`: stage tasks.
+
+**Impact:** None (plan only).
+
 ## v5.0.0 — 2026-11-16
 **Author:** Vuththana
 
