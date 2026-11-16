@@ -23,6 +23,22 @@ Every change to these docs gets an entry here, newest first. Code repos read it 
 
 ---
 
+## v4.0.0 — 2026-11-16
+**Author:** Vuththana
+
+- `specs/notification-mobile/spec.md`: amended and re-approved (✅ v4.0.0), answering the verify and QA spec gaps (NTM-Q15 … NTM-Q30 → NTM-D34 … NTM-D48).
+  - Withdrawn: NTM-R43 → R48 (a replayed logout of an ended session, which Keycloak accepts, deletes the caller's push token); NTM-E38 → E42; NTM-E28 → E43 (a forced sign-out deletes the phone's FCM token, no sign-out call); NTM-R31 → R51 (push data is exactly `notification_id`, `alert_type`, `branch_name`; no `title` / `body`).
+  - Added: NTM-R49 (sign-out sent without a bearer), R50 (forced sign-out deletes the FCM token), R52 (`"push": null` = absent), R53 (token at most 4096 characters, NTM-M31), R54 (no system notification while signed out), R55 (tab row scrolls when labels don't fit); NTM-E44 … E49.
+  - Reworded: NTM-R06 and E31 (card times in Asia/Phnom_Penh), E18, E37, R28, D07.
+  - §8: `push_tokens.token` at most 4096 (proposed). §9: sign-out, preferences, push-tokens and the push data keys 📝 planned.
+- `specs/notification-mobile/tasks.md`: T05, T07, T23, T24 reopened and, with T30 and T33, marked ⟳; progress 27 / 33.
+
+**Impact:**
+- identity-service: drop `title` / `body` from `FcmPushSender` data; 4096 cap on push-token register / unregister; tests naming NTM-R31, R43, E38 (`KeycloakTokenClientTest`, `AuthControllerIT`, `PushTextTest`, `PushDeliveryTest`, `PushDeliveryIT`, `PushConfigTest`, `FcmPushSenderTest`) renamed to the new IDs; QA scenarios NTM-R43-*, NTM-E38-* re-run as R48 / E42.
+- android-ui: forced sign-out deletes the FCM token; drop pushes while signed out; scrollable tab row; tests `SignOutPushTokenTest`, `PushMessageHandlerTest` renamed; QA NTM-E28-M1 re-run as E43.
+- web-ui: send `POST /auth/sign-out` without a bearer (NTM-R49).
+- plan.md: the sign-out and FCM data message contract sections and the NTM-E28 / E38 rows need updating (`/sdd:plan`).
+
 ## v3.1.1 — 2026-11-16
 **Author:** Vuththana
 

@@ -1,6 +1,6 @@
 # Spec: Notifications on mobile (center and push)
 
-**Prefix:** `NTM` · **Status:** ⟳ Amending · **Version:** v3.0.0 · **Author:** Vuththana
+**Prefix:** `NTM` · **Status:** ✅ Approved · **Version:** v4.0.0 · **Author:** Vuththana
 **Tables:** `notifications`, `users.notification_preferences` (identity-service; not yet in the data dictionary — see §8), new `push_tokens` (§8)
 **Endpoints:** identity-service `/api/v1/notifications/**` (exist in code, not yet in `api/`) · new ones listed in §9
 **Routes (Android destinations):** `Notifications` (owner, manager) · `NotificationSettings` (owner, manager)
@@ -64,7 +64,7 @@ and adds device-token storage and an FCM sender in identity-service.
 | **NTM-D04** | Tapping | Tapping a notification card marks it read; tapping a push opens the notification center and marks that notification read. Neither opens the related record in this version. (User, 2026-11-16) |
 | ~~**NTM-D05**~~ withdrawn in v3.0.0 — replaced by NTM-D32 (the Telegram note opens Settings → Telegram alerts). Was: | Settings on mobile | A "Notifications" row in the Preferences section of the existing Settings screen (Menu → Settings opens `Profile`) lists the caller's alert types with In-app (shown locked on where the server locks it, NTF-D09), Push, and Telegram as a read-only status ("Set up on the web" when not linked). (User, 2026-11-16) |
 | **NTM-D06** | Alert types | The app shows the alert types the server sends; an unknown future type is shown with its `message` and a generic icon and title. Missing types from the design are a later NTF change. (User, 2026-11-16) |
-| **NTM-D07** | Push text | A push shows only the alert type's title and the branch name ("All branches" for business-wide), never amounts, names or the `message`, because it can appear on a locked screen. (User, 2026-11-16) |
+| **NTM-D07** | Push text | A push shows only the alert type's title and the branch name (built by the app, NTM-D42) ("All branches" for business-wide), never amounts, names or the `message`, because it can appear on a locked screen. (User, 2026-11-16) |
 | **NTM-D08** | Unread count | The Dashboard bell shows the unread total from `GET /notifications/unread-count`, refreshed when the Dashboard opens, when the app returns to the foreground and when a push arrives while the app is open. (User, 2026-11-16) |
 | **NTM-D09** | Devices | A user may receive push on several phones. Signing in registers the phone's token for that user; signing out unregisters it; the server drops tokens FCM reports as invalid and all tokens of a deactivated user. (User, 2026-11-16) |
 | **NTM-D10** | Mark all read | "Mark all read" acts at once, without confirmation, and offers Undo in a snackbar (NTM-D18). (User, 2026-11-16) |
@@ -91,6 +91,21 @@ and adds device-token storage and an FCM sender in identity-service.
 | **NTM-D31** | Refused save | When a save is refused with a field error for a type (e.g. `telegram_needs_in_app`), the switch reverts and the server's field message for that type shows, not the generic envelope message. (User, 2026-11-16, plan Q3) |
 | **NTM-D32** | Settings on mobile | A "Notifications" row in the Preferences section of the existing Settings screen (Menu → Settings opens `Profile`) lists the caller's alert types with In-app (shown locked on where the server locks it, NTF-D09), Push, and Telegram as a read-only status on this screen; when Telegram isn't linked, a note (NTM-M29) opens the existing Settings → Telegram alerts screen. (User, 2026-11-16, plan Q4) |
 | **NTM-D33** | Sign-out answer | `POST /auth/sign-out` keeps answering `200` as today, also for a refresh token Keycloak rejects; the push token is deleted only when Keycloak accepted the logout. (User, 2026-11-16, plan Q5) |
+| **NTM-D34** | Replayed logout | A refresh token whose logout Keycloak accepts deletes the caller's `push_token`, also for an already ended session (Keycloak answers 2xx to a replayed logout); only that user's own old refresh token can do it, so no check of the session is added. (User, 2026-11-16, NTM-Q15) |
+| **NTM-D35** | Sign-out bearer | Clients send no `Authorization` header with `POST /auth/sign-out`; a presented invalid or expired bearer is refused with `401` before the endpoint, and the server is not changed. (User, 2026-11-16, NTM-Q16) |
+| **NTM-D36** | Forced sign-out | When the session refresh fails and the app returns to sign-in, it deletes the phone's FCM token as on a normal sign-out (no sign-out call: Keycloak already rejected the refresh token, NTM-D33); the server drops the stale token on its next send (NTM-R32). (User, 2026-11-16, NTM-Q17) |
+| **NTM-D37** | Card time | Card times, like day groups and "Today", are in Asia/Phnom_Penh whatever the phone's zone. (User, 2026-11-16, NTM-Q18) |
+| **NTM-D38** | Mark all while switching | "Mark all read" applies to the tab and branch at the moment of the tap, even if the user switches while it is sending; NTM-M04 with Undo still shows. (User, 2026-11-16, NTM-Q19) |
+| **NTM-D39** | Midnight | Day headers are worked out on each load (open, refresh, tab or branch switch, return to the foreground), not live at midnight. (User, 2026-11-16, NTM-Q20) |
+| **NTM-D40** | Branch list failure | If the owner's branch list fails to load, the chip offers only "All branches" and the list is fetched again on pull-to-refresh or reopening; no error shows. (User, 2026-11-16, NTM-Q21) |
+| **NTM-D41** | Signed-out phone | A push that reaches the phone while no one is signed in is dropped: no system notification. (User, 2026-11-16, NTM-Q22) |
+| **NTM-D42** | Push data | The push data is exactly `notification_id`, `alert_type` and `branch_name` (absent for a business-wide notification); the app builds the title and text itself; the server sends no `title` or `body`. (User, 2026-11-16, NTM-Q23) |
+| **NTM-D43** | Stored push | Every phone save stores `push` for all types (NTM-R22), so a later change of a default (NTM-D17) doesn't reach users who saved; there is no "reset to defaults" in this version. (User, 2026-11-16, NTM-Q24, NTM-Q28) |
+| **NTM-D44** | Null push | In `PUT /preferences`, `"push": null` is treated like a missing `push`: the stored value is kept. (User, 2026-11-16, NTM-Q25) |
+| **NTM-D45** | Blank sign-out token | A blank or whitespace-only `push_token` on `POST /auth/sign-out` is treated as none; sign-out still answers `200`. (User, 2026-11-16, NTM-Q26) |
+| **NTM-D46** | Token length | A push token is at most 4096 characters (FCM tokens are about 160); register and unregister refuse a longer one with a field error. (User, 2026-11-16, NTM-Q27) |
+| **NTM-D47** | Home timing | A push arriving within a moment after the user leaves the app may still count as foreground and show no system notification (Android lifecycle); accepted. (User, 2026-11-16, NTM-Q29) |
+| **NTM-D48** | Large text | When the tab labels don't fit (e.g. large font size), the tab row scrolls sideways; labels are never cut. (User, 2026-11-16, NTM-Q30) |
 
 ## 4. Journeys
 
@@ -114,7 +129,7 @@ sequenceDiagram
     C->>I: GET /notifications?…&cursor=…
 ```
 
-Realises NTM-R01 … NTM-R12.
+Realises NTM-R01 … NTM-R12, NTM-R55.
 
 ### 4b. Read, unread and mark all
 
@@ -150,7 +165,7 @@ sequenceDiagram
     I-->>S: 200 / 400
 ```
 
-Realises NTM-R19 … NTM-R24, NTM-R42, NTM-R44 … NTM-R46.
+Realises NTM-R19 … NTM-R24, NTM-R42, NTM-R44 … NTM-R46, NTM-R52.
 
 ### 4d. Register the phone for push
 
@@ -172,7 +187,7 @@ sequenceDiagram
     A->>F: delete token
 ```
 
-Realises NTM-R25 … NTM-R29, NTM-R41, NTM-R43.
+Realises NTM-R25 … NTM-R29, NTM-R41, NTM-R48 … NTM-R50, NTM-R53.
 
 ### 4e. Receive and open a push
 
@@ -192,7 +207,7 @@ sequenceDiagram
     A->>U: Notifications (All)
 ```
 
-Realises NTM-R30 … NTM-R37, NTM-R40.
+Realises NTM-R30, NTM-R32 … NTM-R37, NTM-R40, NTM-R51, NTM-R54.
 
 ## 5. Requirements
 
@@ -203,7 +218,7 @@ Realises NTM-R30 … NTM-R37, NTM-R40.
 - **NTM-R03** · Owner, Manager · §4a — The notification center shows the tabs All, Unread, Financial and Stock; Unread shows the unread total next to its label; each tab loads `GET /notifications` with its filter (NTM-D02).
 - **NTM-R04** · Owner · §4a — An owner can filter the center by one active branch or "All branches" (the start value), sent as `branch_id`; a manager sees no branch filter (NTM-D11).
 - **NTM-R05** · Owner, Manager · §4a — Notifications are listed newest first in groups by the Asia/Phnom_Penh day of `created_at` ("Today" and "Yesterday" also in Asia/Phnom_Penh, whatever the phone's zone), headed "Today · {d MMM}", "Yesterday · {d MMM}" or "{d MMM yyyy}".
-- **NTM-R06** · Owner, Manager · §4a — Each card shows the alert type's icon and title (NTM-M10 … NTM-M22), the `message` in full, the local time ("HH:mm" today, else "d MMM, HH:mm") and the branch.
+- **NTM-R06** · Owner, Manager · §4a — Each card shows the alert type's icon and title (NTM-M10 … NTM-M22), the `message` in full, the time in Asia/Phnom_Penh ("HH:mm" today, else "d MMM, HH:mm") and the branch.
 - **NTM-R07** · Owner, Manager · §4a — The branch on a card is `branch.branch_name`, "All branches" when `branch` is null, and is marked "(inactive)" when `branch.is_active` is false.
 - **NTM-R08** · Owner, Manager · §4a — An unread card is visibly marked (dot and tinted background); a read card is not.
 - **NTM-R09** · Owner, Manager · §4a — The list loads the next page with `cursor` = the last `next_cursor` when the user scrolls to the end, until `next_cursor` is null.
@@ -234,13 +249,13 @@ Realises NTM-R30 … NTM-R37, NTM-R40.
 - **NTM-R25** · Owner, Manager · §4d — After sign-in, and on every app start while signed in, the app sends the phone's FCM token with `POST /notifications/push-tokens`; the app keeps the last token it registered, and when FCM issues a new token it sends that kept one to `POST /notifications/push-tokens/unregister` and registers the new one (NTM-D09, NTM-D14, NTM-D23).
 - **NTM-R26** · Owner, Manager · §4d — On Android 13 and later the app asks for the notification permission once, on the Dashboard right after the first sign-in on the phone (NTM-D19); later the user can only turn it on from the phone's settings (NTM-M07); denying it keeps in-app notifications working.
 - **NTM-R27** · Owner, Manager · §4d — A failed token registration is retried on the next app start or token refresh and never shows an error to the user.
-- **NTM-R28** · Owner, Manager · §4d — Signing out sends the phone's token as `push_token` with `POST /auth/sign-out`, which deletes it on the server, and then deletes the FCM token on the phone whether or not the call succeeded (NTM-D15, NTM-D22).
+- **NTM-R28** · Owner, Manager · §4d — Signing out sends the phone's token as `push_token` with `POST /auth/sign-out`, which deletes it on the server, and then deletes the FCM token on the phone whether or not the call succeeded (NTM-D15, NTM-D22; forced sign-out: NTM-R50).
 - **NTM-R29** · Owner, Manager · §4d — The next user who signs in on the same phone registers the phone's token for themselves; a token still held by another user is moved to the caller, so the previous user gets no more pushes on that phone (NTM-D21).
 
 ### Sending and opening push (§4e)
 
 - **NTM-R30** · Server · §4e — When identity-service creates an in-app notification for a recipient (NTF), it sends one push to each of that recipient's tokens if push is on for that alert type (NTM-D03).
-- **NTM-R31** · Server · §4e — The push carries the alert type's title (NTM-M10 … NTM-M20, NTM-M22) as its title, the branch name or "All branches" as its text, and `notification_id` and `alert_type` as data; no amounts, names or `message` (NTM-D07); each notification is its own push, never collapsed (NTM-D24).
+- ~~**NTM-R31**~~ withdrawn in v4.0.0 — replaced by NTM-R51 (the push data keys). Was: · Server · §4e — The push carries the alert type's title (NTM-M10 … NTM-M20, NTM-M22) as its title, the branch name or "All branches" as its text, and `notification_id` and `alert_type` as data; no amounts, names or `message` (NTM-D07); each notification is its own push, never collapsed (NTM-D24).
 - **NTM-R32** · Server · §4e — A token FCM reports as unregistered or invalid is deleted.
 - **NTM-R33** · Server · §4e — Deactivating a user (including managers deactivated with their branch), deleting a business, and the anonymisation purge of a user delete all their tokens, in the same transaction as that change; no push is sent to them afterwards.
 - **NTM-R34** · Server · §4e — A failed or slow push never delays or blocks creating the in-app notification or the other channels.
@@ -255,17 +270,25 @@ Realises NTM-R30 … NTM-R37, NTM-R40.
 - **NTM-R40** · Server · §4e — The push is sent after the notification's transaction commits (as Telegram delivery is), and only for a notification that was newly created, so a redelivered alert event sends no second push.
 - **NTM-R41** · Server · §4d — Every registration refreshes the token's `last_seen_at`; a daily background job (identity-service `job/`, with ShedLock like the notification purge job, TRD §6) deletes tokens not seen for 60 days (NTM-D23).
 - **NTM-R42** · Server · §4c — The preferences store a `push` value per alert type; a type with no stored `push` reads as its Telegram default (NTM-D17), and a `PUT` without `push` keeps the stored values (NTM-D28).
-- **NTM-R43** · Server · §4d — `POST /auth/sign-out` accepts an optional `push_token`; when given, that token is deleted for the signing-out user (NTM-D22), once Keycloak has accepted the logout (NTM-D33); a refresh token Keycloak rejects, including an already ended session (`invalid_grant`), deletes nothing, and the token stays until a later registration moves it or the 60-day job removes it (NTM-D21, NTM-D23).
+- ~~**NTM-R43**~~ withdrawn in v4.0.0 — replaced by NTM-R48 (an ended session's replayed logout deletes the token, NTM-D34). Was: · Server · §4d — `POST /auth/sign-out` accepts an optional `push_token`; when given, that token is deleted for the signing-out user (NTM-D22), once Keycloak has accepted the logout (NTM-D33); a refresh token Keycloak rejects, including an already ended session (`invalid_grant`), deletes nothing, and the token stays until a later registration moves it or the 60-day job removes it (NTM-D21, NTM-D23).
 - **NTM-R44** · Owner, Manager · §4c — While a type's In-app switch is off, its Push switch is disabled and keeps its stored value (NTM-D30).
 - **NTM-R45** · Owner, Manager · §4c — When `PUT /notifications/preferences` is refused with a field error for a type, the changed switch reverts and that field error's message shows (e.g. "Turn on in-app alerts to get them on Telegram.") (NTM-D31).
 - **NTM-R46** · Owner, Manager · §4c — The screen shows Telegram per type as "On" / "Off", read-only on this screen; when `telegram_linked` is false it shows the note NTM-M29, which opens Settings → Telegram alerts (NTM-D32).
 - **NTM-R47** · Owner, Manager · all — Debug builds run as `com.kshrd.starter.dev` and release builds as `com.kshrd.starter` (NTM-D29).
+- **NTM-R48** · Server · §4d — `POST /auth/sign-out` accepts an optional `push_token`; when given, that token is deleted for the signing-out user once Keycloak has accepted the logout, also when Keycloak accepts a replayed logout of an already ended session (NTM-D22, NTM-D33, NTM-D34); a refresh token Keycloak rejects deletes nothing, and the token stays until a later registration moves it or the 60-day job removes it (NTM-D21, NTM-D23).
+- **NTM-R49** · Owner, Manager · §4d — The app sends `POST /auth/sign-out` without an `Authorization` header, so an expired access token never stops it or starts a token refresh (NTM-D35).
+- **NTM-R50** · Owner, Manager · §4d — When the session refresh fails and the app returns to sign-in, it deletes the phone's FCM token, as on sign-out (NTM-D36).
+- **NTM-R51** · Server · §4e — The push is an FCM data message with exactly `notification_id`, `alert_type` and `branch_name` (left out for a business-wide notification); no `title`, `body`, amounts, names or `message` (NTM-D07, NTM-D42); the app shows the alert type's title (NTM-M10 … NTM-M22) as its title and the branch name or "All branches" as its text; each notification is its own push, never collapsed (NTM-D24).
+- **NTM-R52** · Server · §4c — In `PUT /notifications/preferences`, a type's `"push": null` keeps its stored value, like a missing `push` (NTM-D44).
+- **NTM-R53** · Server · §4d — `POST /notifications/push-tokens` and `POST /notifications/push-tokens/unregister` refuse a `token` longer than 4096 characters with `400` and the field message NTM-M31 (NTM-D46).
+- **NTM-R54** · Owner, Manager · §4e — A push that arrives while no one is signed in on the phone shows no system notification (NTM-D41).
+- **NTM-R55** · Owner, Manager · §4a — When the tab labels don't fit the width (e.g. large font size), the tab row scrolls sideways and no label is cut (NTM-D48).
 
 ### Fields
 
 | Field | Rule | Requirement |
 |---|---|---|
-| `notifications.notification_id` | read only; id for read / unread and the push data | NTM-R13, NTM-R31 |
+| `notifications.notification_id` | read only; id for read / unread and the push data | NTM-R13, NTM-R51 |
 | `notifications.feed` | `FINANCIAL` / `SYSTEM` (server) | NTM-R03 |
 | `notifications.alert_type` | the server's `AlertType` values | NTM-R06, NTM-R12 |
 | `notifications.message` | server text, shown in full | NTM-R06 |
@@ -288,27 +311,28 @@ Realises NTM-R30 … NTM-R37, NTM-R40.
 | **NTM-M07** | — | "Notifications are off for CamFinSight on this phone." · action "Open settings" | NTM-R23 |
 | **NTM-M08** | — | Channel name "Alerts" | NTM-R37 |
 | **NTM-M09** | `404 · NOTIFICATION_NOT_FOUND` | "This notification is no longer available." | NTM-E06 |
-| **NTM-M10** | — | `DUE_DATE` title — "Payment due" | NTM-R06, NTM-R31 |
-| **NTM-M11** | — | `STOCK` — "Stock running low" | NTM-R06, NTM-R31 |
-| **NTM-M12** | — | `IMPORT` — "Import finished" | NTM-R06, NTM-R31 |
-| **NTM-M13** | — | `MONTHLY_REPORT` — "Monthly report ready" | NTM-R06, NTM-R31 |
-| **NTM-M14** | — | `UNMATCHED_LINES` — "Bank lines unmatched" | NTM-R06, NTM-R31 |
-| **NTM-M15** | — | `INTEGRATION_FAILURE` — "Integration stopped syncing" | NTM-R06, NTM-R31 |
-| **NTM-M16** | — | `REVENUE_DRIFT` — "Revenue is off its usual pace" | NTM-R06, NTM-R31 |
-| **NTM-M17** | — | `BUDGET_EXCEEDED` — "Budget exceeded" | NTM-R06, NTM-R31 |
-| **NTM-M18** | — | `REVIEW_SUBMITTED` — "Reconciliation to sign off" | NTM-R06, NTM-R31 |
-| **NTM-M19** | — | `CATEGORY_REQUEST` — "Category requested" | NTM-R06, NTM-R31 |
-| **NTM-M20** | — | `DAILY_SALES` — "Daily sales summary" | NTM-R06, NTM-R31 |
+| **NTM-M10** | — | `DUE_DATE` title — "Payment due" | NTM-R06, NTM-R51 |
+| **NTM-M11** | — | `STOCK` — "Stock running low" | NTM-R06, NTM-R51 |
+| **NTM-M12** | — | `IMPORT` — "Import finished" | NTM-R06, NTM-R51 |
+| **NTM-M13** | — | `MONTHLY_REPORT` — "Monthly report ready" | NTM-R06, NTM-R51 |
+| **NTM-M14** | — | `UNMATCHED_LINES` — "Bank lines unmatched" | NTM-R06, NTM-R51 |
+| **NTM-M15** | — | `INTEGRATION_FAILURE` — "Integration stopped syncing" | NTM-R06, NTM-R51 |
+| **NTM-M16** | — | `REVENUE_DRIFT` — "Revenue is off its usual pace" | NTM-R06, NTM-R51 |
+| **NTM-M17** | — | `BUDGET_EXCEEDED` — "Budget exceeded" | NTM-R06, NTM-R51 |
+| **NTM-M18** | — | `REVIEW_SUBMITTED` — "Reconciliation to sign off" | NTM-R06, NTM-R51 |
+| **NTM-M19** | — | `CATEGORY_REQUEST` — "Category requested" | NTM-R06, NTM-R51 |
+| **NTM-M20** | — | `DAILY_SALES` — "Daily sales summary" | NTM-R06, NTM-R51 |
 | **NTM-M21** | — | Unknown type — "Notification" | NTM-R12 |
-| **NTM-M22** | — | `REVIEW_RETURNED` — "Reconciliation returned" | NTM-R06, NTM-R31 |
+| **NTM-M22** | — | `REVIEW_RETURNED` — "Reconciliation returned" | NTM-R06, NTM-R51 |
 | **NTM-M23** | — | Tab labels "All", "Unread", "Financial", "Stock"; Unread with its count "Unread {n}" | NTM-R03 |
 | **NTM-M24** | — | Actions "Mark all read", "Mark as unread" | NTM-R14, NTM-R15 |
-| **NTM-M25** | — | Branch labels "All branches" and the suffix " (inactive)" | NTM-R04, NTM-R07, NTM-R31 |
+| **NTM-M25** | — | Branch labels "All branches" and the suffix " (inactive)" | NTM-R04, NTM-R07, NTM-R51 |
 | **NTM-M26** | — | Day headers "Today · {d MMM}", "Yesterday · {d MMM}", "{d MMM yyyy}"; badge cap "99+" | NTM-R01, NTM-R05 |
 | **NTM-M27** | — | Settings labels "Notifications", "In-app", "Push", "Telegram", "On", "Off" | NTM-R19, NTM-R20, NTM-R46 |
 | **NTM-M28** | server error | The server's `message` for any other error, shown as is with Retry | NTM-R38 |
 | **NTM-M29** | — | "Telegram isn't linked. Connect it in Settings → Telegram alerts." (opens that screen) | NTM-R46 |
 | **NTM-M30** | `400 · VALIDATION_FAILED` field error | The server's field message for the refused type, e.g. "Turn on in-app alerts to get them on Telegram." | NTM-R45 |
+| **NTM-M31** | `400 · VALIDATION_FAILED` field `token` | "Use at most 4096 characters." (the existing `validation.max_length`) | NTM-R53 |
 
 ## 7. Edge cases
 
@@ -329,7 +353,7 @@ Realises NTM-R30 … NTM-R37, NTM-R40.
 - **NTM-E15** · Actions — The user taps Undo after the snackbar is gone, or leaves the screen → no Undo; the notifications stay read.
 - **NTM-E16** · Push — The phone has the notification permission denied → no system notification shows; the bell count and center still work (NTM-R26).
 - **NTM-E17** · Push — Android 12 or earlier → no permission prompt; pushes show unless the user turned the app's notifications off in the phone's settings.
-- **NTM-E18** · Push — The user taps a push while signed out → sign-in, then the center; the notification is marked read only if it belongs to the user who signed in; a `404` on the read call is ignored and the center opens normally (as NTM-E19).
+- **NTM-E18** · Push — The user taps a push while signed out → sign-in, then the center; the notification (one already in the tray before sign-out; pushes arriving while signed out are dropped, NTM-R54) is marked read only if it belongs to the user who signed in; a `404` on the read call is ignored and the center opens normally (as NTM-E19).
 - **NTM-E19** · Push — The user taps a push for a notification that was already read or purged → the center opens; a `404` on the read call is ignored.
 - **NTM-E20** · Push — Signing out with no connection → the sign-out call fails, the phone's FCM token is deleted anyway, and the server drops the stale token on its next send or after 60 days (NTM-R28, NTM-R32, NTM-R41).
 - **NTM-E21** · Push — FCM issues a new token while the app runs → it is registered at once (NTM-R25); the old one is dropped by the server when FCM reports it invalid.
@@ -339,20 +363,28 @@ Realises NTM-R30 … NTM-R37, NTM-R40.
 - **NTM-E25** · Push — FCM is unreachable from identity-service → the in-app notification and Telegram are delivered as usual; that push is lost (NTM-R34).
 - **NTM-E26** · Settings — Saving a switch fails → the switch returns to its old value and NTM-M03 shows (NTM-R22).
 - **NTM-E27** · Settings — The server returns a type with `locked` true → its In-app switch shows on and can't be changed (NTM-R20).
-- **NTM-E28** · Session — The token expires while the center is open → the existing refresh runs; if it fails, sign-in; the token is removed by the sign-out call, which needs no access token (NTM-R28).
+- ~~**NTM-E28**~~ withdrawn in v4.0.0 — replaced by NTM-E43 (a forced sign-out makes no sign-out call and deletes the FCM token). Was: · Session — The token expires while the center is open → the existing refresh runs; if it fails, sign-in; the token is removed by the sign-out call, which needs no access token (NTM-R28).
 - **NTM-E29** · Permissions — A different user signs in on the same phone while the old token is still registered to the previous user → the token moves to the new user (NTM-D21); the previous user gets no more pushes on that phone.
 - **NTM-E30** · Permissions — A manager's branch is deactivated while a push is on its way → the push may still arrive; tapping it opens the center on All, which lists only what the server now returns.
-- **NTM-E31** · Time — The phone's clock or zone differs from Asia/Phnom_Penh → day groups and "Today" follow Asia/Phnom_Penh (NTM-R05).
+- **NTM-E31** · Time — The phone's clock or zone differs from Asia/Phnom_Penh → day groups, "Today" and card times follow Asia/Phnom_Penh (NTM-R05, NTM-R06).
 - **NTM-E32** · Data — A first-time user with no stored preferences → the screen shows the server's defaults for the types returned, Push per NTM-D17.
 - **NTM-E33** · Actions — The user toggles several switches quickly → saves are sent one after another; the last one wins; a failed save reverts only its own switch.
 - **NTM-E34** · Actions — The same notification is opened from a card and from a push, or a push is tapped twice → repeated read calls are harmless.
 - **NTM-E35** · Push — The user turns Push off for a type while an earlier push for it is still in the phone's tray → it stays; tapping it works (NTM-R35).
 - **NTM-E36** · Text — A long branch name → the card shows it in full on its own line; a push shows it shortened by the phone.
-- **NTM-E37** · Push — A push for a notification of another user (stale token on a shared phone) is tapped → the read call answers `404` (never `403`, NTF-E20) and is ignored; the center opens.
-- **NTM-E38** · Session — Sign-out with a refresh token Keycloak rejects → `200` as today; no push token is deleted; the phone's FCM token is still deleted (NTM-D33, NTM-R28).
+- **NTM-E37** · Push — A push for a notification of another user (sent to a shared phone just before the token moved, NTM-D21) is tapped → the read call answers `404` (never `403`, NTF-E20) and is ignored; the center opens.
+- ~~**NTM-E38**~~ withdrawn in v4.0.0 — replaced by NTM-E42 (a replayed logout of an ended session is accepted by Keycloak and deletes the token). Was: · Session — Sign-out with a refresh token Keycloak rejects → `200` as today; no push token is deleted; the phone's FCM token is still deleted (NTM-D33, NTM-R28).
 - **NTM-E39** · Push — The read call made when a push is opened fails for a reason other than `404` (e.g. offline) → nothing extra shows; the card stays unread and the center shows its own state.
 - **NTM-E40** · State — On a tab whose loaded cards are all read, "Mark all read" is disabled, even if older pages not yet loaded may hold unread ones (NTM-R15).
 - **NTM-E41** · Settings — The user turns In-app off for a type whose Telegram is on → the server refuses (`telegram_needs_in_app`), the switch reverts and NTM-M30 shows (NTM-R45).
+- **NTM-E42** · Session — Sign-out with a refresh token Keycloak rejects (garbage, tampered, expired) → `200` as today and no push token is deleted; a refresh token of an already ended session, whose replayed logout Keycloak accepts, → `200` and the caller's `push_token` is deleted (NTM-R48, NTM-D34); the phone's FCM token is deleted either way (NTM-R28).
+- **NTM-E43** · Session — The access token expires while the center is open → the existing refresh runs; if it fails, the app opens sign-in, makes no sign-out call and deletes the phone's FCM token (NTM-R50); the server drops the stale token on its next send (NTM-R32).
+- **NTM-E44** · Actions — The user switches tab or (owner) branch while "Mark all read" is sending → it applies to the tab and branch of the tap; NTM-M04 with Undo shows; the new tab loads as usual (NTM-D38).
+- **NTM-E45** · Time — The center stays open across midnight (Asia/Phnom_Penh) → the headers change on the next load, not at midnight (NTM-D39).
+- **NTM-E46** · Connectivity — The owner's branch list fails to load → the chip offers only "All branches"; the list is fetched again on pull-to-refresh or reopening; no error shows (NTM-D40).
+- **NTM-E47** · Session — A `POST /auth/sign-out` carrying an invalid or expired bearer → `401` before the endpoint; the app never sends one (NTM-R49, NTM-D35).
+- **NTM-E48** · Session — `push_token` on sign-out is blank or only spaces → treated as none; `200`, nothing deleted (NTM-D45).
+- **NTM-E49** · Push — A push arrives a moment after the user pressed Home → it may count as foreground and show no system notification; the bell and center show it on the next reload (NTM-D47).
 
 ## 8. Data dictionary changes
 
@@ -360,7 +392,7 @@ Realises NTM-R30 … NTM-R37, NTM-R40.
 |---|---|---|---|
 | `notifications` (all columns) | Add the table to `data-dictionary/` as it is in identity-service V1 (owned by NTF) | Fields cited in §5 | proposed |
 | `users.notification_preferences` | jsonb shape (`jsonb-shapes.md#usersnotification_preferences`, `{"version":1,"alerts":{TYPE:{in_app,telegram}}}`) gains `push` (boolean) per alert type; `version` stays 1 and a missing `push` reads as the type's Telegram default (NTM-D17); a PUT without `push` keeps the stored values (NTM-D28) | NTM-R20, NTM-R22, NTM-R30 | proposed |
-| `push_tokens` | New identity-service table: `push_token_id` (uuid, PK), `user_id` (FK `users`, not null), `token` (text, not null, unique — a re-registration moves it, NTM-D21), `platform` (`ANDROID`), `created_at`, `last_seen_at` (deleted after 60 days, NTM-D23) | NTM-R25, NTM-R28, NTM-R29, NTM-R32, NTM-R33, NTM-R41 | proposed |
+| `push_tokens` | New identity-service table: `push_token_id` (uuid, PK), `user_id` (FK `users`, not null), `token` (text, not null, unique, at most 4096 characters — a re-registration moves it, NTM-D21, NTM-D46), `platform` (`ANDROID`), `created_at`, `last_seen_at` (deleted after 60 days, NTM-D23) | NTM-R25, NTM-R28, NTM-R29, NTM-R32, NTM-R33, NTM-R41, NTM-R53 | proposed (v4.0.0: length 4096) |
 
 ## 9. Endpoints
 
@@ -372,15 +404,15 @@ Realises NTM-R30 … NTM-R37, NTM-R40.
 | `POST /api/v1/notifications/{notification_id}/unread` | identity-service | Owner, Manager | NTM-R14, NTM-R16 | 📝 exists in code, not yet listed |
 | `POST /api/v1/notifications/read-all` | identity-service | Owner, Manager | NTM-R15 | 📝 exists in code, not yet listed |
 | `GET /api/v1/notifications/preferences` | identity-service — **changed** (adds `push`) | Owner, Manager | NTM-R19, NTM-R20, NTM-R46 | 📝 planned |
-| `PUT /api/v1/notifications/preferences` | identity-service — **changed** (`AlertChannelsRequest` gains optional `push`, same strict-boolean rule, kept when absent; `AlertChannelsResponse` gains `push`) | Owner, Manager | NTM-R22, NTM-R42 | 📝 planned |
-| `POST /api/v1/notifications/push-tokens` | identity-service — **new** | Owner, Manager | NTM-R25, NTM-R27, NTM-R29, NTM-R41 | 📝 planned |
-| `POST /api/v1/notifications/push-tokens/unregister` | identity-service — **new** | Owner, Manager | NTM-R25 | 📝 planned |
-| `POST /api/v1/auth/sign-out` | identity-service — **changed** (optional `push_token`) | Owner, Manager | NTM-R28, NTM-R43 | 📝 planned |
+| `PUT /api/v1/notifications/preferences` | identity-service — **changed** (`AlertChannelsRequest` gains optional `push`, same strict-boolean rule, kept when absent; `AlertChannelsResponse` gains `push`) | Owner, Manager | NTM-R22, NTM-R42, NTM-R52 | 📝 planned (v4.0.0: `"push": null` = absent) |
+| `POST /api/v1/notifications/push-tokens` | identity-service — **new** | Owner, Manager | NTM-R25, NTM-R27, NTM-R29, NTM-R41, NTM-R53 | 📝 planned (v4.0.0: `token` at most 4096) |
+| `POST /api/v1/notifications/push-tokens/unregister` | identity-service — **new** | Owner, Manager | NTM-R25, NTM-R53 | 📝 planned (v4.0.0: `token` at most 4096) |
+| `POST /api/v1/auth/sign-out` | identity-service — **changed** (optional `push_token`) | Owner, Manager | NTM-R28, NTM-R48, NTM-R49 | 📝 planned (v4.0.0: sent without a bearer; blank `push_token` = none; replayed logout deletes) |
 | `GET /api/v1/branches` | identity-service (`status` defaults to active) | Owner | NTM-R04 | 📝 exists in code (as in `mobile-sales-management` §9, MSL-R06) |
 
 The unchanged notification endpoints marked "exists in code, not yet listed" stay out of `api/` until the NTF docs are brought into this repo; only the new and changed ones are listed in `api/identity-service.md`.
 
-Push sending runs inside identity-service where alerts are fanned out (`AlertEventListener`, next to Telegram delivery); FCM is called only by identity-service.
+Push sending runs inside identity-service where alerts are fanned out (`AlertEventListener`, next to Telegram delivery); FCM is called only by identity-service. The push is a data message with the keys `notification_id`, `alert_type` and `branch_name` (NTM-R51); `api/identity-service.md` lists them (📝 planned, v4.0.0).
 
 ## 10. Questions
 
@@ -398,13 +430,19 @@ Push sending runs inside identity-service where alerts are fanned out (`AlertEve
 - **NTM-Q12** · §1 — `origin/dev`'s `DashboardHeader` has no bell. *Options:* (a) this feature adds it to the team's shell (with the team's OK); (b) wait for the team to add it and depend on that. *Suggested:* (a). → NTM-D26 (answered 2026-11-16 by Vuththana)
 - **NTM-Q13** · §4c — With the phone's notification permission denied, Push switches do nothing. *Options:* (a) editable, with the NTM-M07 banner (as written); (b) disabled until the permission is granted. *Suggested:* (a). → NTM-D27 (answered 2026-11-16 by Vuththana)
 - **NTM-Q14** · §9 — A `PUT /preferences` without `push` (today's web app) — what happens? *Options:* (a) the stored `push` values are kept — the web keeps working unchanged; (b) `400` — the matrix must be whole, the web must send `push` too. *Suggested:* (a). → NTM-D28 (answered 2026-11-16 by Vuththana)
-- **NTM-Q15** · §5 — Real Keycloak answers 2xx to a replayed logout of an already ended session, so `POST /auth/sign-out` with that old refresh token and a `push_token` deletes the token, against NTM-R43 / NTM-E38 (QA NTM-R43-M2, NTM-E38-M2). Only the holder of that user's own old refresh token can do it. *Options:* (a) accept it: a refresh token Keycloak accepts the logout for, ended session or not, deletes the caller's push token; withdraw NTM-R43 / NTM-E38 and restate them; (b) identity-service first checks the session is live (e.g. Keycloak token introspection) and deletes nothing for an ended one — an extra Keycloak call per sign-out. *Suggested:* (a).
-- **NTM-Q16** · §5 — `POST /auth/sign-out` with an invalid or expired `Authorization` header answers `401` before the controller, so a client that sends its access token can't sign out cleanly once it expired (QA NTM-R28-M1). The Android app no longer sends one. *Options:* (a) clients send no bearer on sign-out (the app already doesn't; the web BFF must not either), stated in the spec and `api/` — no server change; (b) identity-service ignores any bearer on sign-out, so it always reaches the controller — a security config change. *Suggested:* (a).
-- **NTM-Q17** · §7 — NTM-E28: when the refresh fails and the app sends the user to sign-in (forced sign-out), it neither calls `POST /auth/sign-out` nor deletes the phone's FCM token, so the server keeps sending that user's pushes to the phone until someone signs in there (NTM-D21) or 60 days pass. *Options:* (a) on a forced sign-out the app deletes the phone's FCM token (the server drops the stale token on its next send, NTM-R32); (b) (a) plus a `POST /auth/sign-out` with the `push_token` (useless when Keycloak rejects the refresh token, NTM-D33); (c) keep it as is and say so. *Suggested:* (a).
-- **NTM-Q18** · §5 — NTM-R06 says a card shows "the local time"; the app shows Asia/Phnom_Penh time, like the day groups (NTM-R05), so a phone in another zone sees Phnom Penh times (QA NTM-R06-C2). *Options:* (a) card times follow Asia/Phnom_Penh, like NTM-R05 and NTM-E31 (wording only); (b) card times follow the phone's zone while day groups stay Phnom Penh — a time and its day header can disagree. *Suggested:* (a).
-- **NTM-Q19** · §4b — The user switches tab or (owner) branch while "Mark all read" is still sending. Which tab does it apply to, and what does the screen show? *Options:* (a) it applies to the tab and branch at the moment of the tap; NTM-M04 with Undo still shows; the new tab loads as usual; (b) tabs and the branch chip are disabled while it is sending. *Suggested:* (a).
-- **NTM-Q20** · §4a — The center stays open across midnight (Asia/Phnom_Penh): do "Today" / "Yesterday" headers roll over? *Options:* (a) headers are worked out on each load (open, refresh, tab or branch switch, return to the foreground), not live at midnight; (b) the screen regroups at midnight. *Suggested:* (a).
-- **NTM-Q21** · §4a — The owner's branch list (`GET /branches`) fails to load. *Options:* (a) the chip shows only "All branches" and the list is fetched again on pull-to-refresh or reopening; no error shows; (b) the chip shows NTM-M03 with Retry. *Suggested:* (a).
-- **NTM-Q22** · §4e — A push reaches the phone while no one is signed in (sent before the sign-out deleted the token, or after a forced sign-out). Today the app shows it. *Options:* (a) the app drops it: no system notification while signed out; (b) show it; tapping opens sign-in, then the center (NTM-R35, NTM-E18). *Suggested:* (a).
-- **NTM-Q23** · §9 — The push data the app uses to build the notification carries `branch_name` besides `notification_id` and `alert_type`; NTM-R31 and `api/` don't name it. *Options:* (a) the spec and `api/identity-service.md` define the push data keys: `notification_id`, `alert_type`, `branch_name` (absent = business-wide, "All branches"); (b) the server sends the finished title and text instead and the app shows them as is. *Suggested:* (a).
-- **NTM-Q24** · §3 — The phone sends every type's `push` on each save (NTM-R22), so after the first phone save every type has a stored `push` and a later change of a default (NTM-D17) no longer reaches that user. *Options:* (a) accept it, as with `in_app` and `telegram` today; (b) the app sends `push` only for the type it changed — the PUT still carries all types. *Suggested:* (a).
+- **NTM-Q15** · §5 — Real Keycloak answers 2xx to a replayed logout of an already ended session, so `POST /auth/sign-out` with that old refresh token and a `push_token` deletes the token, against NTM-R43 / NTM-E38 (QA NTM-R43-M2, NTM-E38-M2). Only the holder of that user's own old refresh token can do it. *Options:* (a) accept it: a refresh token Keycloak accepts the logout for, ended session or not, deletes the caller's push token; withdraw NTM-R43 / NTM-E38 and restate them; (b) identity-service first checks the session is live (e.g. Keycloak token introspection) and deletes nothing for an ended one — an extra Keycloak call per sign-out. *Suggested:* (a). → NTM-D34 (answered 2026-11-16 by Vuththana)
+- **NTM-Q16** · §5 — `POST /auth/sign-out` with an invalid or expired `Authorization` header answers `401` before the controller, so a client that sends its access token can't sign out cleanly once it expired (QA NTM-R28-M1). The Android app no longer sends one. *Options:* (a) clients send no bearer on sign-out (the app already doesn't; the web BFF must not either), stated in the spec and `api/` — no server change; (b) identity-service ignores any bearer on sign-out, so it always reaches the controller — a security config change. *Suggested:* (a). → NTM-D35 (answered 2026-11-16 by Vuththana)
+- **NTM-Q17** · §7 — NTM-E28: when the refresh fails and the app sends the user to sign-in (forced sign-out), it neither calls `POST /auth/sign-out` nor deletes the phone's FCM token, so the server keeps sending that user's pushes to the phone until someone signs in there (NTM-D21) or 60 days pass. *Options:* (a) on a forced sign-out the app deletes the phone's FCM token (the server drops the stale token on its next send, NTM-R32); (b) (a) plus a `POST /auth/sign-out` with the `push_token` (useless when Keycloak rejects the refresh token, NTM-D33); (c) keep it as is and say so. *Suggested:* (a). → NTM-D36 (answered 2026-11-16 by Vuththana)
+- **NTM-Q18** · §5 — NTM-R06 says a card shows "the local time"; the app shows Asia/Phnom_Penh time, like the day groups (NTM-R05), so a phone in another zone sees Phnom Penh times (QA NTM-R06-C2). *Options:* (a) card times follow Asia/Phnom_Penh, like NTM-R05 and NTM-E31 (wording only); (b) card times follow the phone's zone while day groups stay Phnom Penh — a time and its day header can disagree. *Suggested:* (a). → NTM-D37 (answered 2026-11-16 by Vuththana)
+- **NTM-Q19** · §4b — The user switches tab or (owner) branch while "Mark all read" is still sending. Which tab does it apply to, and what does the screen show? *Options:* (a) it applies to the tab and branch at the moment of the tap; NTM-M04 with Undo still shows; the new tab loads as usual; (b) tabs and the branch chip are disabled while it is sending. *Suggested:* (a). → NTM-D38 (answered 2026-11-16 by Vuththana)
+- **NTM-Q20** · §4a — The center stays open across midnight (Asia/Phnom_Penh): do "Today" / "Yesterday" headers roll over? *Options:* (a) headers are worked out on each load (open, refresh, tab or branch switch, return to the foreground), not live at midnight; (b) the screen regroups at midnight. *Suggested:* (a). → NTM-D39 (answered 2026-11-16 by Vuththana)
+- **NTM-Q21** · §4a — The owner's branch list (`GET /branches`) fails to load. *Options:* (a) the chip shows only "All branches" and the list is fetched again on pull-to-refresh or reopening; no error shows; (b) the chip shows NTM-M03 with Retry. *Suggested:* (a). → NTM-D40 (answered 2026-11-16 by Vuththana)
+- **NTM-Q22** · §4e — A push reaches the phone while no one is signed in (sent before the sign-out deleted the token, or after a forced sign-out). Today the app shows it. *Options:* (a) the app drops it: no system notification while signed out; (b) show it; tapping opens sign-in, then the center (NTM-R35, NTM-E18). *Suggested:* (a). → NTM-D41 (answered 2026-11-16 by Vuththana)
+- **NTM-Q23** · §9 — The server sends `notification_id`, `alert_type`, `branch_name` (left out when business-wide), `title` and `body` as FCM data; the app reads only the first three and builds the title itself; NTM-R31 and `api/` name none of the keys. *Options:* (a) define all five, `title` / `body` unused; (b) the app shows the server's `title` / `body`; (c) define the three keys and drop `title` / `body` from the server. *Suggested:* (c), matches the shipped app. → NTM-D42 (answered 2026-11-16 by Vuththana)
+- **NTM-Q24** · §3 — The phone sends every type's `push` on each save (NTM-R22), so after the first phone save every type has a stored `push` and a later change of a default (NTM-D17) no longer reaches that user. *Options:* (a) accept it, as with `in_app` and `telegram` today; (b) the app sends `push` only for the type it changed — the PUT still carries all types. *Suggested:* (a). → NTM-D43 (answered 2026-11-16 by Vuththana)
+- **NTM-Q25** · §9 — `"push": null` in `PUT /preferences`: NTM-R42 and NTM-D28 only say "without `push`". *Options:* (a) null = absent, the stored value is kept (as shipped); (b) refused with a field error; (c) resets the type to its default. *Suggested:* (a). → NTM-D44 (answered 2026-11-16 by Vuththana)
+- **NTM-Q26** · §9 — A blank `push_token` on sign-out (register and unregister answer `400` for blank). *Options:* (a) ignored, still `200`; (b) `400`. *Suggested:* (a), sign-out never fails on a client detail. → NTM-D45 (answered 2026-11-16 by Vuththana)
+- **NTM-Q27** · §8 — `push_tokens.token` has no maximum length. *Options:* (a) at most 4096 characters, `400` over; (b) no limit (as shipped). *Suggested:* (a). → NTM-D46 (answered 2026-11-16 by Vuththana)
+- **NTM-Q28** · §3 — A first save stores a full matrix and there is no way back to "nothing stored". *Options:* (a) accept, as NTM-Q24; (b) a "reset to defaults" later. *Suggested:* (a). → NTM-D43 (answered 2026-11-16 by Vuththana)
+- **NTM-Q29** · §4e — A push arriving 1–2 s after Home showed no system notification (android QA): the app still counted as foreground. *Options:* (a) accept and note it; (b) treat Home as background at once; (c) leave it unspecified. *Suggested:* (a). → NTM-D47 (answered 2026-11-16 by Vuththana)
+- **NTM-Q30** · §4a — At font scale 1.5 the "Stock" tab is clipped (android QA). *Options:* (a) the tab row scrolls sideways; (b) tabs shrink or wrap; (c) accept. *Suggested:* (a). → NTM-D48 (answered 2026-11-16 by Vuththana)
