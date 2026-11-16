@@ -23,6 +23,14 @@ Every change to these docs gets an entry here, newest first. Code repos read it 
 
 ---
 
+## v4.0.1 — 2026-11-16
+**Author:** Vuththana
+
+- `specs/notification-mobile/plan.md`: Plan: notification-mobile changed for spec v4.0.0 (approved by Vuththana). New parts F (identity: push data without `title` / `body`, `push_tokens.token` ≤ 4096 with a `V4` CHECK migration, tests), G (android: forced sign-out deletes the FCM token, pushes dropped while signed out, mark all read across a tab switch, branch list re-fetched after a failure, tests) and H (docs: `api/identity-service.md`, dictionary length). No web-ui work. Plan Q1 answered: NTM-R54 as written.
+- `specs/README.md`: notification-mobile stage `tasks`.
+
+**Impact:** None (plan only).
+
 ## v4.0.0 — 2026-11-16
 **Author:** Vuththana
 
