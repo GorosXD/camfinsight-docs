@@ -1,6 +1,6 @@
 # Spec: Notifications on mobile (center and push)
 
-**Prefix:** `NTM` · **Status:** ✅ Approved · **Version:** v2.5.0 · **Author:** Vuththana
+**Prefix:** `NTM` · **Status:** ⟳ Amending · **Version:** v2.5.0 · **Author:** Vuththana
 **Tables:** `notifications`, `users.notification_preferences` (identity-service; not yet in the data dictionary — see §8), new `push_tokens` (§8)
 **Endpoints:** identity-service `/api/v1/notifications/**` (exist in code, not yet in `api/`) · new ones listed in §9
 **Routes (Android destinations):** `Notifications` (owner, manager) · `NotificationSettings` (owner, manager)
