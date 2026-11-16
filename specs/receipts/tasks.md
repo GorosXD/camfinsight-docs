@@ -1,6 +1,6 @@
 # Tasks: Receipts
 
-**Spec:** `RCT` v5.0.0 · **Plan:** approved 2026-11-16 · **Progress:** 30 / 31
+**Spec:** `RCT` v5.0.0 · **Plan:** approved 2026-11-16 · **Progress:** 29 / 31
 
 Branches: `feature/receipts` from `origin/dev-cleaned` in both repos; PRs into `dev-cleaned` (plan §10 Q1).
 
@@ -46,7 +46,7 @@ Branches: `feature/receipts` from `origin/dev-cleaned` in both repos; PRs into `
 
 ## Phase 3 — Integration and docs
 
-- [x] **T28** `web-ui` — Live e2e `e2e/live/receipts.spec.ts` against a local finance-service through the gateway, as owner (All branches and one branch) and as manager: upload → review → post; typed-in → save for later; a save that changes nothing (no new history row); duplicate → not-duplicate (M29); manager cross-branch duplicate (M27); discard; reverse; reversing again from a stale page (M30); the reversed view's reference; list filters and number search; summary cards; banking reverse and categorize of a receipt's transaction (M28) covers RCT-R01, RCT-R08, RCT-R16, RCT-R19, RCT-R25, RCT-R30, RCT-R31, RCT-R33, RCT-R36, RCT-R38, RCT-R46, RCT-R47, RCT-R50, RCT-R52, RCT-R54, RCT-R55, RCT-R56, RCT-E10, RCT-E28, RCT-E29, RCT-E32, RCT-E33 · after T12, T13, T14, T21, T22, T23, T24, T25, T26, T27 · done when: `GATEWAY_URL=http://localhost:8080 pnpm test:live e2e/live/receipts.spec.ts` green with tests named by these IDs, except RCT-E33; web-qa walks plan §4 at desktop and phone width, and checks RCT-E33 ("—" on the duplicate card) with identity-service stopped and a KHR duplicate in scope
+- [ ] **T28** `web-ui` — Live e2e `e2e/live/receipts.spec.ts` against a local finance-service through the gateway, as owner (All branches and one branch) and as manager: upload → review → post; typed-in → save for later; a save that changes nothing (no new history row); duplicate → not-duplicate (M29); manager cross-branch duplicate (M27); discard; reverse; reversing again from a stale page (M30); the reversed view's reference; list filters and number search; summary cards; banking reverse and categorize of a receipt's transaction (M28) covers RCT-R01, RCT-R08, RCT-R16, RCT-R19, RCT-R25, RCT-R30, RCT-R31, RCT-R33, RCT-R36, RCT-R38, RCT-R46, RCT-R47, RCT-R50, RCT-R52, RCT-R54, RCT-R55, RCT-R56, RCT-E10, RCT-E28, RCT-E29, RCT-E32, RCT-E33 · after T12, T13, T14, T21, T22, T23, T24, T25, T26, T27 · done when: `GATEWAY_URL=http://localhost:8080 pnpm test:live e2e/live/receipts.spec.ts` green with tests named by these IDs, except RCT-E33; web-qa walks plan §4 at desktop and phone width, and checks RCT-E33 ("—" on the duplicate card) with identity-service stopped and a KHR duplicate in scope
 - [ ] **T29** `docs` — `api/finance-service.md` brought to plan §3: error `data` shapes; M03 problem codes incl. `REQUIRED`; history actions; M22 on save; SERVICE refusal; body checks before the lookup on PUT and reverse; `409 RECEIPT_NOT_REVERSIBLE` and the reverse refusal order; the summary's null `possible_duplicate.usd_total`, with no 503; `transaction_reference` on a reversed detail; the M29 message; the transactions guard; statuses 📝 → 🚧 on the feature branches, ✅ on merge; stage in `specs/README.md` covers: setup · after T12, T13 · done when: entries confirmed by the user
 
 ---
