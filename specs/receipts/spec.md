@@ -1,6 +1,6 @@
 # Spec: Receipts
 
-**Prefix:** `RCT` · **Status:** ⟳ Amending · **Version:** v3.2.0 · **Author:** Vuththana
+**Prefix:** `RCT` · **Status:** ✅ Approved · **Version:** v4.0.0 · **Author:** Vuththana
 **Tables:** [`receipts`](../../data-dictionary/finance.md#receipts), [`receipt_lines`](../../data-dictionary/finance.md#receipt_lines), [`documents`](../../data-dictionary/finance.md#documents) · reads `financial_accounts`, `business_categories`, `transactions`, `bank_transactions`, `change_logs`
 **Endpoints:** [api/finance-service.md](../../api/finance-service.md) · listed in §9
 **Routes:** `/financial-records/receipts` (Owner, Manager) · `/financial-records/receipts/upload` (Owner, Manager) · `/financial-records/receipts/new` (Owner, Manager) · `/financial-records/receipts/[id]` (Owner, Manager)
@@ -24,7 +24,7 @@ receipt is posted as one expense transaction. A posted receipt is never edited o
     this spec only shows its state (RCT-R40).
   - Mobile (Android) screens.
 - **Depends on:** financial accounts, business categories and the transaction ledger (posting and reversal) as built in
-  finance-service; `businesses.exchange_rate` read from identity-service; `POST /ai/receipts/extract` on ai-import-service,
+  finance-service, whose reverse, PATCH and categorize endpoints change for receipt transactions (RCT-R47, RCT-R48, RCT-R52, RCT-R53); `businesses.exchange_rate` read from identity-service; `POST /ai/receipts/extract` on ai-import-service,
   called by the web. None has a spec in this docs version, so their rules are named by table and field.
 
 ## 2. Roles and branch scope
@@ -84,6 +84,14 @@ receipt is posted as one expense transaction. A posted receipt is never edited o
 | **RCT-D35** | Incomplete posting | Missing fields, a missing branch and a total of 0 or less all come back together as one `RECEIPT_INCOMPLETE` with every problem listed (answered 2026-11-16 by Vuththana). |
 | **RCT-D36** | Inactive branch | Receipts of a deactivated branch can still be changed, as other finance records today; a branch rule for all of finance belongs in its own change (answered 2026-11-16 by Vuththana). |
 | **RCT-D37** | Duplicate outside a manager's branch | The check stays business-wide; a manager whose receipt matches another branch's expense sees a warning with no link or details of the match (answered 2026-11-16 by Vuththana). |
+| **RCT-D38** | A receipt's transaction elsewhere | The transactions endpoints refuse to reverse or PATCH a transaction that a receipt points to; it is changed only from its receipt, which keeps RCT-D13 true. The code `TRANSACTION_NOT_REVERSIBLE` is reused for the PATCH refusal too (answered 2026-11-16 by Vuththana). |
+| **RCT-D39** | Losing to a discard | Any action on a receipt that a discard has already removed gets 404 RCT-M08, as for any receipt that isn't there (answered 2026-11-16 by Vuththana). |
+| **RCT-D40** | Which duplicate match is kept | Transactions before unposted receipts, then the oldest `created_at`, then the id; for a manager a match in their own branch comes first. A posted receipt and its own transaction count as one match (answered 2026-11-16 by Vuththana). |
+| **RCT-D41** | Number search | When the trimmed search is plain `digits[.digits]`, it also matches receipts whose total equals that number (`12.5` = `12.50`) (answered 2026-11-16 by Vuththana). |
+| **RCT-D42** | Account turned off | RCT-M06 uses finance's existing text "'{account}' is inactive"; no turned-off date is shown (answered 2026-11-16 by Vuththana). |
+| **RCT-D43** | Reversal date | A receipt's reversal is dated today, so an old receipt can still be reversed after its month is signed off; it is refused only when today is in a signed-off period (RCT-R45) (answered 2026-11-16 by Vuththana). |
+| **RCT-D44** | Bulk categorize | `POST /bank-statements/transactions/categorize` refuses the whole batch with RCT-M28 when any id is a receipt's transaction; nothing in it changes (answered 2026-11-16 by Vuththana). |
+| **RCT-D45** | A receipt's reversal row | The reversal transaction of a receipt's transaction is locked the same way: PATCH and categorize refuse it with RCT-M28 (answered 2026-11-16 by Vuththana). |
 
 ## 4. Journeys
 
@@ -136,12 +144,12 @@ On the review page of a `POSSIBLE_DUPLICATE` receipt, the user compares it with 
 - "Same expense, discard receipt" (§4f), or
 - "Not a duplicate, continue review": `POST .../{id}/not-duplicate`, and the receipt goes to `NEEDS_REVIEW`.
 
-Requirements: RCT-R23 to RCT-R26.
+Requirements: RCT-R23 to RCT-R26, RCT-R46, RCT-R49.
 
 ### 4e. List
 
 `/financial-records/receipts` shows the cards, the status tabs, the filters, a page of rows, and a search box.
-Requirements: RCT-R30 to RCT-R35.
+Requirements: RCT-R30 to RCT-R35, RCT-R40, RCT-R50.
 
 ### 4f. Discard
 
@@ -149,7 +157,7 @@ From an unposted receipt: a confirmation, then `DELETE .../{id}`. Requirements: 
 
 ### 4g. Reverse
 
-From a posted receipt: a reason, then `POST .../{id}/reverse`. Requirements: RCT-R38, RCT-R39, RCT-R45.
+From a posted receipt: a reason, then `POST .../{id}/reverse`. Requirements: RCT-R38, RCT-R39, RCT-R45, RCT-R47, RCT-R48, RCT-R51 to RCT-R53.
 
 ## 5. Requirements
 
@@ -204,6 +212,7 @@ From a posted receipt: a reason, then `POST .../{id}/reverse`. Requirements: RCT
 - **RCT-R23** · Owner, Manager · §4d — A receipt is a possible duplicate when, in the same business, another receipt that isn't `REVERSED`, or a `POSTED` `EXPENSE` transaction that isn't reversed and isn't this receipt's own, has the same vendor (`vendor_name` or `counterparty_name`, case-insensitive, trimmed), the same date, and the same total and currency (RCT-D06, RCT-D19).
 - **RCT-R24** · Owner, Manager · §4d — When the match is a transaction, `receipts.duplicate_of_transaction_id` holds it; when it is an unposted receipt, `receipts.duplicate_of_receipt_id` holds it (a posted receipt counts as its transaction). The review page links to the match when the caller may see it.
 - **RCT-R46** · Manager · §4d — When the match (a receipt or a transaction) is outside the manager's branch or has no branch, the receipt is still `POSSIBLE_DUPLICATE`, but the detail shows only `duplicate_match_scope` = `OTHER_BRANCH`, with no id, vendor or amount of the match, and the review page shows RCT-M27. Posting it is refused with RCT-M10 until it is marked not a duplicate or discarded (RCT-D37).
+- **RCT-R49** · Owner, Manager · §4d — When several records match, the one stored is: for a manager, first one in their own branch; then a transaction before an unposted receipt; then the oldest `created_at`; then the lowest id. A posted receipt and its own transaction count as one match (RCT-D40).
 - **RCT-R25** · Owner, Manager · §4d — "Not a duplicate" (`POST .../{id}/not-duplicate`) on a `POSSIBLE_DUPLICATE` receipt sets it to `NEEDS_REVIEW` and clears `duplicate_of_transaction_id` and `duplicate_of_receipt_id`. It records `NOT_DUPLICATE` in `change_logs`; no reason is asked.
 - **RCT-R26** · Owner, Manager · §4d — "Not a duplicate" on any other status is refused with RCT-M12.
 
@@ -215,7 +224,7 @@ From a posted receipt: a reason, then `POST .../{id}/reverse`. Requirements: RCT
   - `businessCategoryId` and `financialAccountId`
   - `dateFrom` and `dateTo` on `receipt_date`, inclusive
   - `branchId`: an owner may pick any branch of the business; a manager sending another branch gets RCT-M22, the same as other finance lists
-  - `search`, which matches `vendor_name` or `receipt_number` (contains, case-insensitive), or, when the search is a number, also the total (any of them matches)
+  - `search`, which matches `vendor_name` or `receipt_number` (contains, case-insensitive), or, when the search is a number, also the total as RCT-R50 says (any of them matches)
 - **RCT-R32** · Owner, Manager · §4e — Each row has:
   - `receipt_id` and `receipt_code`
   - `vendor_name`, `receipt_date` and the category name
@@ -230,6 +239,7 @@ From a posted receipt: a reason, then `POST .../{id}/reverse`. Requirements: RCT
   The month is the calendar month in Asia/Phnom_Penh. Unposted receipts count in USD at today's `businesses.exchange_rate`. It takes `branchId` as the list does; a manager sending another branch gets RCT-M22.
 - **RCT-R34** · Owner, Manager · §4e — `GET /receipts/{id}` returns the receipt with its lines, its file's name, type and size, and its `change_logs` history. When posted, it also returns the transaction's reference and its matched state (RCT-R40).
 - **RCT-R35** · Owner, Manager · §4e — `GET /receipts/{id}/document` returns a pre-signed link to the file, valid 15 minutes, the same as the attachments endpoint.
+- **RCT-R50** · Owner, Manager · §4e — A search that, trimmed, is plain digits with an optional `.` and digits also matches receipts whose `original_amount` equals that number (`12.5` matches 12.50; `1,250` and `$5` are text only) (RCT-D41).
 
 ### Discard (§4f)
 
@@ -238,9 +248,14 @@ From a posted receipt: a reason, then `POST .../{id}/reverse`. Requirements: RCT
 
 ### Reverse (§4g)
 
-- **RCT-R38** · Owner, Manager · §4g — Reversing a `POSTED` receipt requires a reason of 1 to 500 characters (empty: RCT-M13; too long: RCT-M21). It reverses the receipt's transaction through the finance ledger (one opposite transaction with `reverses_transaction_id`, RCT-D25), sets the receipt to `REVERSED` and saves `reversal_reason`. A `change_logs` row records it (RCT-D07).
+- **RCT-R38** · Owner, Manager · §4g — Reversing a `POSTED` receipt requires a reason of 1 to 500 characters (empty: RCT-M13; too long: RCT-M21). It reverses the receipt's transaction through the finance ledger (one opposite transaction with `reverses_transaction_id`, dated today as RCT-R51 says, RCT-D25), sets the receipt to `REVERSED` and saves `reversal_reason`. A `change_logs` row records it (RCT-D07).
 - **RCT-R39** · Owner, Manager · §4g — Reversing is refused with RCT-M14 while a `bank_transactions` row has `matched_transaction_id` = the receipt's transaction, and with RCT-M09 when the receipt isn't `POSTED`.
 - **RCT-R40** · Owner, Manager · §4e — A posted receipt's detail (RCT-R34) has `reconciliation_state`: `NOTHING_TO_RECONCILE` when the account is a `CASH_TILL`; `WAITING` for a `BANK_ACCOUNT` or `MOBILE_WALLET` until a `bank_transactions` row has `matched_transaction_id` = its transaction; then `MATCHED`.
+- **RCT-R47** · Owner, Manager · §4g — `POST /bank-statements/transactions/{id}/reverse` on a transaction that a receipt's `transaction_id` points to is refused with RCT-M28; the receipt's own reverse (RCT-R38) is the only way (RCT-D38).
+- **RCT-R48** · Owner, Manager · §4g — `PATCH /bank-statements/transactions/{id}` on a transaction that a receipt's `transaction_id` points to is refused with RCT-M28 and changes nothing (RCT-D38).
+- **RCT-R52** · Owner, Manager · §4g — `POST /bank-statements/transactions/categorize` with any id that a receipt's `transaction_id` points to is refused with RCT-M28, and no transaction in the batch changes (RCT-D44).
+- **RCT-R53** · Owner, Manager · §4g — A transaction whose `reverses_transaction_id` is a receipt's transaction is refused by PATCH and by categorize with RCT-M28, as in RCT-R48 and RCT-R52 (RCT-D45).
+- **RCT-R51** · Owner, Manager · §4g — A receipt's reversal transaction is dated today in Asia/Phnom_Penh (RCT-D43).
 
 ### Fields
 
@@ -266,9 +281,9 @@ From a posted receipt: a reason, then `POST .../{id}/reverse`. Requirements: RCT
 | **RCT-M03** | `400 · VALIDATION_FAILED` | "{field} {problem}" (one per field, e.g. "vendor_name is at most 100 characters") | RCT-R05, RCT-R41, RCT-R42, RCT-R43 |
 | **RCT-M04** | `422 · RECEIPT_INCOMPLETE` | "Fix {n} fields to save this receipt" (with the list of fields) | RCT-R20 |
 | **RCT-M05** | `422 · RECEIPT_DATE_IN_FUTURE` | "Receipt date can't be in the future." | RCT-R21 |
-| **RCT-M06** | `422 · ACCOUNT_INACTIVE` | "{account} was turned off on {date}. Pick an active account, then save again." | RCT-R22 |
+| **RCT-M06** | `422 · ACCOUNT_INACTIVE` | "'{account}' is inactive" | RCT-R22 |
 | **RCT-M07** | `422 · CATEGORY_INACTIVE` | "'{category}' is inactive" | RCT-R22 |
-| **RCT-M08** | `404 · NOT_FOUND` | "Receipt not found." | RCT-R09, RCT-R16, RCT-R25, RCT-R34, RCT-R35, RCT-R36, RCT-R38, RCT-E02, RCT-E03, RCT-E04, RCT-E19 |
+| **RCT-M08** | `404 · NOT_FOUND` | "Receipt not found." | RCT-R09, RCT-R16, RCT-R25, RCT-R34, RCT-R35, RCT-R36, RCT-R38, RCT-E02, RCT-E03, RCT-E04, RCT-E19, RCT-E29 |
 | **RCT-M09** | `409 · RECEIPT_NOT_EDITABLE` | "This receipt is {status} and can't be changed." | RCT-R11, RCT-R16, RCT-R37, RCT-R39 |
 | **RCT-M10** | `409 · RECEIPT_POSSIBLE_DUPLICATE` | "This receipt looks like an expense that is already saved. Compare them, then choose what to do so nothing is counted twice." | RCT-R16 |
 | **RCT-M11** | `403 · BRANCH_ACCESS_DENIED` | "You can only use accounts of your branch." | RCT-R14 |
@@ -277,7 +292,7 @@ From a posted receipt: a reason, then `POST .../{id}/reverse`. Requirements: RCT
 | **RCT-M14** | `409 · TRANSACTION_ALREADY_MATCHED` | "This expense is matched to a statement line. Unmatch it first." | RCT-R39 |
 | **RCT-M15** | `201` | "Receipt saved" | RCT-R01 |
 | **RCT-M16** | `200` | "{receipt} is posted as {transaction}." | RCT-R19 |
-| **RCT-M17** | `200` | "{receipt} from {vendor} was removed. Nothing was counted." | RCT-R36 |
+| **RCT-M17** | `200` | "{receipt} from {vendor} was removed. Nothing was counted." (no vendor: "{receipt} was removed. Nothing was counted.") | RCT-R36 |
 | **RCT-M18** | `200` | "{receipt} is now Reversed. {amount} went back to {account}." | RCT-R38 |
 | **RCT-M19** | `503 · DEPENDENCY_UNAVAILABLE` | "We couldn't save the file. Try again." | RCT-E11, RCT-E21 |
 | **RCT-M21** | `400 · VALIDATION_FAILED` | "The reason is at most 500 characters." | RCT-R38 |
@@ -287,8 +302,9 @@ From a posted receipt: a reason, then `POST .../{id}/reverse`. Requirements: RCT
 | **RCT-M25** | `422 · CATEGORY_TYPE_MISMATCH` | "'{category}' is not an EXPENSE category" | RCT-R22 |
 | **RCT-M26** | `409 · TRANSACTION_ALREADY_REVERSED` | "This transaction is already reversed" | RCT-E13 |
 | **RCT-M27** | — (page text, not an error) | "This receipt matches an expense already saved in another branch. Check with the owner before posting it." | RCT-R46, RCT-E28 |
+| **RCT-M28** | `409 · TRANSACTION_NOT_REVERSIBLE` | "Change this from its receipt" (new text; the code is reused for edits too, RCT-D38) | RCT-R47, RCT-R48, RCT-R52, RCT-R53 |
 
-Message number 20 was skipped and is not used. RCT-M07, RCT-M22 and RCT-M23 to RCT-M26 are finance-service's existing texts, kept as they are.
+Message number 20 was skipped and is not used. RCT-M06, RCT-M07, RCT-M22 and RCT-M23 to RCT-M26 are finance-service's existing texts, kept as they are. RCT-M23's advice "Date the correction in the next period" fits posting; for a reversal (dated today) the user reopens the reconciliation instead, kept as they are.
 RCT-M03's response carries the field name and a problem code; the English text is built from them, so it can be
 translated later.
 
@@ -315,7 +331,9 @@ In RCT-M16 to RCT-M18, `{receipt}` is `receipt_code`, `{transaction}` is the tra
 - **RCT-E17** · Permissions — The receipt's branch is deactivated, and an owner or manager edits, posts, discards or reverses the receipt → allowed, as for other finance records (RCT-D36).
 - **RCT-E18** · Limits — A receipt is saved with 101 lines → refused with RCT-M03 (RCT-R42).
 - **RCT-E19** · States — The file is asked for on a receipt with no file (typed in) → 404 with RCT-M08.
-- **RCT-E20** · Actions — Discard and post of the same receipt at the same time → one wins; the other gets RCT-M09.
+- ~~**RCT-E20**~~ withdrawn in v4.0.0 — replaced by RCT-E29 (the loser of a discard race gets 404, RCT-D39).
+- **RCT-E29** · Actions — Discard and another action (post, PUT, not-duplicate, a second discard, reverse) on the same receipt at the same time → if the discard wins, the other gets 404 RCT-M08 (RCT-D39); if the other wins first, the discard gets RCT-M09 when the receipt is now `POSTED`, else it goes ahead.
+- **RCT-E30** · Time — A receipt posted in an open period is reversed after today's period is signed off → refused with RCT-M23 (RCT-R45, RCT-R51).
 - **RCT-E21** · Data — The file was stored but saving the receipt fails → the stored file is deleted (if that fails too, its key is logged as in RCT-E12) and RCT-M19 is returned.
 - **RCT-E22** · Permissions — A manager is moved to another branch → the old branch's receipts disappear from their list and open as 404 (RCT-R30); nothing about the receipts changes.
 - **RCT-E23** · Data — The same file is uploaded twice → both are saved; the possible-duplicate check (RCT-R23) compares fields, not files.
@@ -353,6 +371,10 @@ All are finance-service (TRD §1a: finance owns the ledger), under `/api/v1/fina
 | `POST /api/v1/financial-records/receipts/{id}/not-duplicate` | finance-service | Owner, Manager | RCT-R25, RCT-R26 | 📝 planned |
 | `DELETE /api/v1/financial-records/receipts/{id}` | finance-service | Owner, Manager | RCT-R36, RCT-R37 | 📝 planned |
 | `POST /api/v1/financial-records/receipts/{id}/reverse` | finance-service | Owner, Manager | RCT-R38, RCT-R39, RCT-R45 | 📝 planned |
+
+| `POST /api/v1/bank-statements/transactions/{id}/reverse` (existing, changed) | finance-service | Owner, Manager | RCT-R47 | 📝 planned |
+| `PATCH /api/v1/bank-statements/transactions/{id}` (existing, changed) | finance-service | Owner, Manager | RCT-R48, RCT-R53 | 📝 planned |
+| `POST /api/v1/bank-statements/transactions/categorize` (existing, changed) | finance-service | Owner, Manager | RCT-R52, RCT-R53 | 📝 planned |
 
 Used, not added here: `POST /ai/receipts/extract` (ai-import-service, called by the web, §4a); the existing finance lists of
 accounts and categories for the pickers; the existing transaction detail for "Open matching transaction" (RCT-R24). None is
@@ -427,3 +449,41 @@ in `api/` in this docs version.
   - (a) reads only: writes are refused with a new `409 · BRANCH_INACTIVE` "This branch is turned off. Turn it on to change its records.";
   - (b) allowed, as for other finance records today.
 - **RCT-Q21** · §4d — The check is business-wide, so a manager's receipt can match an expense in another branch they can't open. What does the manager see? *Options:* (a) whole business, link shown (opens as 404); (b) compare only in the caller's scope — misses cross-branch duplicates; (c) whole business, a warning with no link or details. → RCT-D37 (answered 2026-11-16 by Vuththana)
+- **RCT-Q22** · §4g — A posted typed-in receipt's transaction has source `MANUAL_ENTRY`, which the transactions endpoints can reverse or edit (`POST /bank-statements/transactions/{id}/reverse`, `PATCH /bank-statements/transactions/{id}`). The receipt then stays `POSTED` and its own Reverse fails with RCT-M26 for good (RCT-E13). Today the reverse endpoint accepts only `MANUAL_ENTRY` and `BANK_IMPORT`, so `AI_RECEIPT` is already refused; PATCH (category, description, counterparty, attachment) has no source check, so it applies to every posted receipt and breaks RCT-D13. *Options:* → RCT-D38 (answered 2026-11-16 by Vuththana)
+  - (a) the transactions endpoints refuse to reverse a transaction a receipt points to (409 `TRANSACTION_NOT_REVERSIBLE` "Reverse this from its receipt"); editing stays allowed — a change to the transactions behaviour;
+  - (b) as (a), and editing it is refused too;
+  - (c) accept it as it is, and note it;
+  - (d) reversing the transaction elsewhere also sets the receipt to `REVERSED`, with the reason and a `change_logs` row.
+
+  *Suggested:* (b), which keeps RCT-D13 true.
+- **RCT-Q23** · §7 — RCT-E20 when discard wins the race: the post (or another action) then finds no receipt. *Options:* → RCT-D39 (answered 2026-11-16 by Vuththana)
+  - (a) 404 RCT-M08, as for any receipt that isn't there;
+  - (b) 409 RCT-M09 with status "discarded", read from the `DISCARDED` `change_logs` row.
+
+  The answer covers every action that loses to a discard: PUT, post, not-duplicate, a second DELETE, reverse. *Suggested:* (a).
+- **RCT-Q24** · §4d — Several records match (RCT-R23); only one is stored. Which one is kept? *Options:* → RCT-D40 (answered 2026-11-16 by Vuththana)
+  - (a) transactions before unposted receipts, then the oldest `created_at`;
+  - (b) as (a), but for a manager a match in their own branch comes first, so they get a link rather than RCT-M27.
+
+  In both, the last tie-break is the id, and a posted receipt and its own transaction count as one match. *Suggested:* (b) (RCT-D37's intent).
+- **RCT-Q25** · §4e — "When the search is a number, also the total" (RCT-R31). *Options:* → RCT-D41 (answered 2026-11-16 by Vuththana)
+  - (a) `original_amount` equals the number;
+  - (b) the total as text contains the search, like the vendor search — noisy: `12` finds 1 200 and 312.00.
+
+  With (a), only plain `digits[.digits]` after trimming counts as a number, and `12.5` equals `12.50`. *Suggested:* (a).
+- **RCT-Q26** · §6 — Placeholders with no value. RCT-M06 "{account} was turned off on {date}": `financial_accounts` doesn't store when it was turned off. RCT-M17 "{receipt} from {vendor} …" when `vendor_name` is empty. *Options for M06:* → RCT-D42 (answered 2026-11-16 by Vuththana)
+  - (a) use `financial_accounts.updated_at`;
+  - (b) reword without the date: "{account} is turned off. Pick an active account, then save again.";
+  - (c) add a `deactivated_at` field (a change to accounts, with no value for accounts already off);
+  - (d) finance's existing text "'{account}' is inactive", as RCT-M07.
+
+  `financial_accounts.updated_at` changes on any edit, so (a) can show a wrong date. *Suggested:* (d). (M17 is reworded in §6.)
+- **RCT-Q28** · §4g — RCT-R45 says reversing is refused when *today* is in a signed-off period. The finance ledger has two reversals: one dated the original transaction's date (`correct`) and one dated today (`refund`). *Options:* → RCT-D43 (answered 2026-11-16 by Vuththana)
+  - (a) the reversal is dated today; it is refused when today is in a signed-off period (RCT-R45 as written) — works after the receipt's month is signed off;
+  - (b) the reversal is dated the receipt's date; it is refused when `receipt_date` is in a signed-off period — the books of that month change, so a signed-off month can't be corrected.
+
+  *Suggested:* (a), so an old receipt can still be reversed after its month is signed off.
+- **RCT-Q29** · §4g — `POST /bank-statements/transactions/categorize` can still change the category of a receipt's posted transaction. *Options:* (a) refuse the whole batch with RCT-M28; (b) skip those ids and report them; (c) accept it. → RCT-D44 (answered 2026-11-16 by Vuththana)
+- **RCT-Q30** · §4g — A receipt's own reversal transaction isn't pointed to by `receipts.transaction_id`, so it can still be PATCHed. *Options:* (a) lock it too (RCT-M28); (b) leave it editable. → RCT-D45 (answered 2026-11-16 by Vuththana)
+
+Question number 27 was skipped and is not used.

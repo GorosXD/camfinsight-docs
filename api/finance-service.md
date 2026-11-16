@@ -14,7 +14,10 @@ clamped to 1–200), `data` = `{ items, page, size, total_elements, total_pages 
 | 📝 | POST | /api/v1/financial-records/receipts/{id}/post | Owner, Manager | RCT-R16–R22, R44, R45 |
 | 📝 | POST | /api/v1/financial-records/receipts/{id}/not-duplicate | Owner, Manager | RCT-R25, R26 |
 | 📝 | DELETE | /api/v1/financial-records/receipts/{id} | Owner, Manager | RCT-R36, R37 |
-| 📝 | POST | /api/v1/financial-records/receipts/{id}/reverse | Owner, Manager | RCT-R38, R39, R45 |
+| 📝 | POST | /api/v1/financial-records/receipts/{id}/reverse | Owner, Manager | RCT-R38, R39, R45, R51 |
+| 📝 | POST | /api/v1/bank-statements/transactions/{id}/reverse (existing, changed) | Owner, Manager | RCT-R47 |
+| 📝 | PATCH | /api/v1/bank-statements/transactions/{id} (existing, changed) | Owner, Manager | RCT-R48, R53 |
+| 📝 | POST | /api/v1/bank-statements/transactions/categorize (existing, changed) | Owner, Manager | RCT-R52, R53 |
 
 A **receipt** is the [`receipts`](../data-dictionary/finance.md#receipts) fields plus `lines` (the `receipt_lines` fields),
 `category_name`, `account_name`, `branch_name`. The detail adds `document` `{ document_id, file_name, content_type,
@@ -98,7 +101,7 @@ No body. `200 OK`, `data`: the **receipt**, `NEEDS_REVIEW`. `409 RECEIPT_NOT_DUP
 
 ### POST /api/v1/financial-records/receipts/{id}/reverse
 
-Body: `reason` (required, 1–500). `200 OK`, `data`: the **receipt**, `REVERSED` (RCT-M18).
+Body: `reason` (required, 1–500). The opposite transaction is dated today (RCT-R51). `200 OK`, `data`: the **receipt**, `REVERSED` (RCT-M18).
 
 | Status | `code` | When |
 |---|---|---|
@@ -107,3 +110,12 @@ Body: `reason` (required, 1–500). `200 OK`, `data`: the **receipt**, `REVERSED
 | 409 | `TRANSACTION_ALREADY_MATCHED` | matched to a statement line (RCT-M14) |
 | 409 | `TRANSACTION_ALREADY_REVERSED` | a reversal raced (RCT-M26) |
 | 409 | `PERIOD_LOCKED` | RCT-M23 |
+
+### POST …/transactions/{id}/reverse · PATCH …/transactions/{id} · POST …/transactions/categorize (existing; change)
+
+Unchanged, except that a transaction a receipt points to (`receipts.transaction_id`) is refused, and so is that transaction's reversal by PATCH and categorize. categorize refuses the whole batch:
+
+| Status | `code` | When |
+|---|---|---|
+| 409 | `TRANSACTION_NOT_REVERSIBLE` | "Change this from its receipt" (RCT-M28, RCT-R47, RCT-R48, RCT-R52, RCT-R53) |
+

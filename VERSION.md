@@ -23,6 +23,32 @@ Every change to these docs gets an entry here, newest first. Code repos read it 
 
 ---
 
+## v4.0.0 — 2026-11-16
+**Author:** Vuththana
+
+- `specs/receipts/spec.md`: amended and re-approved (✅ v4.0.0) to answer the planner's questions. RCT-Q22..Q30 are answered as RCT-D38..D45. The spec now has 50 requirements, 29 edge cases, 45 decisions and 27 messages.
+  - Withdrawn: RCT-E20 → RCT-E29. An action that loses a race to a discard now gets 404 RCT-M08, not RCT-M09.
+  - Added:
+    - RCT-R47, R48, R52, R53: a receipt's transaction and its reversal row can't be reversed, PATCHed or bulk-categorized from the transactions endpoints (409 `TRANSACTION_NOT_REVERSIBLE`, RCT-M28).
+    - RCT-R49: which duplicate match is kept (a manager's own branch first).
+    - RCT-R50: a number search matches the total exactly.
+    - RCT-R51: a reversal is dated today.
+    - RCT-E29, RCT-E30, RCT-M28.
+  - Reworded:
+    - RCT-M06 is now "'{account}' is inactive".
+    - RCT-M17 has a no-vendor text.
+    - RCT-R38 says the reversal is dated today.
+- `api/finance-service.md`: the receipt reversal is dated today. Three existing endpoints are marked as changed: `POST /bank-statements/transactions/{id}/reverse`, `PATCH /bank-statements/transactions/{id}` and `POST /bank-statements/transactions/categorize`.
+- `specs/README.md`: Receipts ✅, stage plan.
+
+**Impact:**
+- **ledgervision-finance-service:** the receipts build follows v4.0.0. The transactions reverse, PATCH and categorize endpoints change behaviour for receipt transactions. No code or tests exist yet, so nothing is stale.
+- **ledgervision-web-ui:**
+  - show RCT-M28 on the transactions screens;
+  - use the new M06 and M17 texts;
+  - a lost discard race shows "not found".
+- **Others:** none.
+
 ## v3.2.0 — 2026-11-16
 **Author:** Vuththana
 
