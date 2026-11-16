@@ -23,6 +23,50 @@ Every change to these docs gets an entry here, newest first. Code repos read it 
 
 ---
 
+## v5.0.0 — 2026-11-16
+**Author:** Vuththana
+
+- `specs/receipts/spec.md`: amended and re-approved (✅ v5.0.0) to settle the spec gaps from `/sdd:verify` on the finance build. The spec now has 52 requirements, 32 edge cases, 69 decisions and 30 messages. RCT-Q31..Q39 are answered as RCT-D61..D69, and RCT-D46..D60 were decided directly.
+  - Withdrawn:
+    - RCT-R15 → RCT-R56: a save that changes nothing writes no history row; a status or match change from the re-check counts as a change.
+    - RCT-R34 → RCT-R55: a `REVERSED` receipt's detail also returns `transaction_id` and the transaction reference.
+    - RCT-R39 → RCT-R54: reversing a receipt that isn't posted gets RCT-M30 "Only a posted receipt can be reversed." (new `409 RECEIPT_NOT_REVERSIBLE`).
+    - RCT-E13 → RCT-E32: the same refusal for an already reversed receipt.
+  - Added:
+    - RCT-R57: a reading sent without a file is not stored.
+    - RCT-R58: reversal transactions are never duplicate candidates.
+    - RCT-E31, RCT-E33: the summary answers without the rate; USD totals that needed it are null.
+    - RCT-E34: reversing still goes ahead with a turned-off account or category.
+    - RCT-M29 "Marked as not a duplicate" and RCT-M30.
+  - Reworded:
+    - Messages: RCT-M04 (one message with a count), RCT-M09 (lowercase status), RCT-M13 and RCT-M21 (problem codes), RCT-M15 (also the edit), and the `{amount}` format ("1,250.50 USD", "41,000 KHR"). The RCT-M03 problem codes are listed in §6.
+    - Requirements: R10, R25, R32, R33 and R38.
+    - Edge cases: E02, E03 and E14.
+  - §8: a `document_sequences` table row (proposed); `documents.extraction` is marked 📝 until the AI team confirms the confidence scale.
+- `specs/receipts/tasks.md`: T07–T12, T14, T17, T20, T21 and T24–T26 are marked ⟳; finance T07–T12 and T14 are reopened.
+
+**Impact:**
+- finance-service:
+  - Add `RECEIPT_NOT_REVERSIBLE` and the reverse refusal order (RCT-D61).
+  - Skip the `UPDATED` row on a no-change save.
+  - Summary: read the rate only for unposted non-USD receipts; null totals when it's missing.
+  - Reversed detail: return the reference.
+  - Messages: M04 singular, M09 lowercase, M18 amount format, M29.
+  - Tests: rename those that name RCT-R15, R34, R39 and E13 (`ReceiptReviewIT`, `ReceiptDetailIT`, `ReceiptDiscardReverseIT`).
+- web-ui:
+  - Texts for M29, M30, the M04 count and the problem codes.
+  - The reversed view's reference.
+  - Null summary totals shown as "—".
+  - `branch_name` from the API.
+  - The reverse dialog for M30.
+  - `e2e/contracts/api-responses.spec.ts` names withdrawn IDs.
+- Plan:
+  - §2 parts C and D;
+  - §3 detail, PUT, summary, not-duplicate and reverse;
+  - the §4 reverse dialog;
+  - the §7 `ErrorCode` table;
+  - the §8 edge-case table.
+
 ## v4.0.1 — 2026-11-16
 **Author:** Vuththana
 
