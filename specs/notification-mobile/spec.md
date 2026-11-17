@@ -1,6 +1,6 @@
 # Spec: Notifications on mobile (center and push)
 
-**Prefix:** `NTM` · **Status:** ✅ Approved · **Version:** v5.0.0 · **Author:** Vuththana
+**Prefix:** `NTM` · **Status:** ✅ Approved · **Version:** v6.0.0 · **Author:** Vuththana
 **Tables:** `notifications`, `users.notification_preferences` (identity-service; not yet in the data dictionary — see §8), new `push_tokens` (§8)
 **Endpoints:** identity-service `/api/v1/notifications/**` (exist in code, not yet in `api/`) · new ones listed in §9
 **Routes (Android destinations):** `Notifications` (owner, manager) · `NotificationSettings` (owner, manager)
@@ -113,6 +113,7 @@ and adds device-token storage and an FCM sender in identity-service.
 | **NTM-D53** | Workspace failure | If the caller's workspace (`GET /auth/me`) fails to load, the center shows no branch chip and no error; pull-to-refresh retries it. (User, 2026-11-17, NTM-Q34) |
 | **NTM-D54** | Over-long stored tokens | The migration that tightens the cap also adds the character rule (NTM-D50) as a database check, and first deletes stored tokens longer than 2048 or with other characters (no real FCM token is either), so identity-service always starts; the phone registers again on its next start. (User, 2026-11-17, NTM-Q35) |
 | **NTM-D55** | Failed FCM deletion | A forced sign-out whose FCM token deletion fails or times out leaves the token alive until the next sign-in moves it (NTM-D21), FCM reports it invalid, or 60 days pass; no retry. (User, 2026-11-17, NTM-Q36) |
+| **NTM-D56** | Blank token first | On register and unregister a blank or whitespace-only `token` gets "This field is required." (as today, and as NTM-D45 treats a blank sign-out `push_token`); length and characters are checked only after that. (User, 2026-11-17, plan Q2) |
 
 ## 4. Journeys
 
@@ -401,7 +402,8 @@ Realises NTM-R30, NTM-R32 … NTM-R37, NTM-R40, NTM-R51, NTM-R54.
 - **NTM-E52** · Connectivity — The caller's workspace (`GET /auth/me`) fails to load → no branch chip and no error; an owner looks like a manager until pull-to-refresh succeeds (NTM-D53).
 - **NTM-E53** · Data — A stored token longer than 2048 characters, or with characters outside NTM-D50, when the cap migration runs → it is deleted before the checks are added; identity-service starts (NTM-D54).
 - **NTM-E54** · Push — A forced sign-out can't delete the FCM token (offline, 5 s timeout) → the token stays alive; pushes for the previous user are dropped while no one is signed in (NTM-R54) until the next sign-in moves the token (NTM-D55).
-- **NTM-E55** · Data — A `token` with a space, a non-ASCII or any other character outside NTM-D50 → `400` with NTM-M33 on `token`, nothing stored or deleted (NTM-R57); a token that is both too long and has such characters gets one of NTM-M32 or NTM-M33, whichever the server reports first.
+- ~~**NTM-E55**~~ withdrawn in v6.0.0 — replaced by NTM-E56 (a whitespace-only token is blank first). Was: · Data — A `token` with a space, a non-ASCII or any other character outside NTM-D50 → `400` with NTM-M33 on `token`, nothing stored or deleted (NTM-R57); a token that is both too long and has such characters gets one of NTM-M32 or NTM-M33, whichever the server reports first.
+- **NTM-E56** · Data — A `token` with a space, a non-ASCII or any other character outside NTM-D50 → `400` with NTM-M33 on `token`, nothing stored or deleted (NTM-R57); a blank or whitespace-only `token` gets "This field is required." instead (NTM-D56); a token that is both too long and has such characters gets one of NTM-M32 or NTM-M33, whichever the server reports first.
 
 ## 8. Data dictionary changes
 

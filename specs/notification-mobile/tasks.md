@@ -1,6 +1,6 @@
 # Tasks: Notifications on mobile (center and push)
 
-**Spec:** `NTM` v5.0.0 · **Plan:** approved 2026-11-16 · **Progress:** 40 / 45
+**Spec:** `NTM` v6.0.0 · **Plan:** approved 2026-11-16 · **Progress:** 40 / 45
 
 ## Phase 1 — Contract and data (identity-service, parts A and F)
 

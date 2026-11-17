@@ -23,6 +23,13 @@ Every change to these docs gets an entry here, newest first. Code repos read it 
 
 ---
 
+## v6.0.0 — 2026-11-17
+**Author:** Vuththana
+
+- `specs/notification-mobile/spec.md`: amended (✅ v6.0.0), answering plan Q2. Withdrawn NTM-E55 → E56: a blank or whitespace-only push `token` gets "This field is required." first; length and characters are checked after it (new NTM-D56).
+
+**Impact:** identity-service: the push-token request DTOs check not-blank before length and characters (validation order); the NTM-R25 blank tests keep "This field is required.". android-ui: none.
+
 ## v5.0.0 — 2026-11-17
 **Author:** Vuththana
 
