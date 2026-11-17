@@ -23,6 +23,14 @@ Every change to these docs gets an entry here, newest first. Code repos read it 
 
 ---
 
+## v6.0.1 — 2026-11-17
+**Author:** Vuththana
+
+- `specs/receipts/plan.md`: Plan: receipts, updated for spec v6.0.0 (approved by Vuththana). Adds finance parts I–K: branches in every state, the save rules (R59–R62), and one 400 shape with non-UUID ids giving 404. It also covers web upload, detail and list for R64–R66 and the PUT refusal order 400 → 404 → M11 → M22 → M09 → M31/M32.
+- `specs/README.md`: stage tasks.
+
+**Impact:** None (plan only).
+
 ## v6.0.0 — 2026-11-17
 **Author:** Vuththana
 
