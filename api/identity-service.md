@@ -2,8 +2,8 @@
 
 | Status | Method | Path | Who | Spec |
 |---|---|---|---|---|
-| 🚧 | POST | /api/v1/notifications/push-tokens (v4.0.0: `token` at most 4096) | Owner, Manager | [notification-mobile](../specs/notification-mobile/spec.md) NTM-R25, NTM-R29, NTM-R41, NTM-R53 |
-| 🚧 | POST | /api/v1/notifications/push-tokens/unregister (v4.0.0: `token` at most 4096) | Owner, Manager | [notification-mobile](../specs/notification-mobile/spec.md) NTM-R25, NTM-R53 |
+| 🚧 | POST | /api/v1/notifications/push-tokens (v5.0.0: `token` at most 2048, FCM characters only) | Owner, Manager | [notification-mobile](../specs/notification-mobile/spec.md) NTM-R25, NTM-R29, NTM-R41, NTM-R56, NTM-R57 |
+| 🚧 | POST | /api/v1/notifications/push-tokens/unregister (v5.0.0: `token` at most 2048, FCM characters only) | Owner, Manager | [notification-mobile](../specs/notification-mobile/spec.md) NTM-R25, NTM-R56, NTM-R57 |
 | ✅ | GET | /api/v1/notifications/preferences (changed: `push`) | Owner, Manager | [notification-mobile](../specs/notification-mobile/spec.md) NTM-R19, NTM-R20, NTM-R42, NTM-R46 |
 | 🚧 | PUT | /api/v1/notifications/preferences (changed: `push`; v4.0.0: `"push": null` = absent) | Owner, Manager | [notification-mobile](../specs/notification-mobile/spec.md) NTM-R22, NTM-R42, NTM-R52 |
 | 🚧 | POST | /api/v1/auth/sign-out (changed: `push_token`; v4.0.0: no bearer, replayed logout) | Owner, Manager | [notification-mobile](../specs/notification-mobile/spec.md) NTM-R28, NTM-R48, NTM-R49 |
@@ -17,26 +17,33 @@ NTF). They are used unchanged by notification-mobile and are not described here 
 
 Registers the phone's FCM token for the signed-in user, or refreshes it. Idempotent per token.
 
-Body: `token` (required; the FCM registration token), `platform` (required; `ANDROID`). `200 OK`, message "Push token saved.", `data`: `null`.
+Body: `token` (required; the FCM registration token, at most 2048 characters of `A–Z a–z 0–9 _ : . -`), `platform` (required; `ANDROID`). `200 OK`, message "Push token saved.", `data`: `null`.
 A token already registered to another user is moved to the caller (NTM-D21). Every call sets `last_seen_at` to now;
 tokens not seen for 60 days are deleted by a daily job (NTM-D23).
+A token both too long and with other characters gets either message (NTM-E56). Like every JSON string, `token` is
+cleaned before these checks (NTM-D57): NBSP, zero-width characters, the word joiner and BOM are removed anywhere, and
+whitespace is trimmed at both ends; a space, tab or newline left inside is refused (NTM-E57).
 
 | Status | `code` | When |
 |---|---|---|
-| 400 | `VALIDATION_FAILED` | `token` missing or blank (`data.token`), `platform` missing or not `ANDROID` (`data.platform`) |
-| 400 | `VALIDATION_FAILED` | `token` longer than 4096 characters: `data.token` = "Use at most 4096 characters." (NTM-R53); nothing stored |
+| 400 | `VALIDATION_FAILED` | `token` missing, or empty after cleaning (only spaces, tabs, newlines or invisible characters): `data.token` = "This field is required.", checked first (NTM-D56); `platform` missing or not `ANDROID` (`data.platform`) |
+| 400 | `VALIDATION_FAILED` | `token` longer than 2048 characters: `data.token` = "Use at most 2048 characters." (NTM-R56); nothing stored |
+| 400 | `VALIDATION_FAILED` | `token` with any other character: `data.token` = "Enter a valid value." (NTM-R57); nothing stored |
 | 401 | `UNAUTHENTICATED` | Not signed in, bad token |
 | 401 | `ACCOUNT_DEACTIVATED` | The user is deactivated |
 
 ### POST /api/v1/notifications/push-tokens/unregister
 
-Removes one of the signed-in user's tokens (used when FCM replaces the phone's token). Body: `token` (required).
+Removes one of the signed-in user's tokens (used when FCM replaces the phone's token). Body: `token` (required; same rules as register).
+The token is cleaned and checked exactly as on register (NTM-D57): `" abc "` unregisters `abc`, and a token both too long and with
+other characters gets either message (NTM-E56).
 `200 OK`, message "Push token removed.", `data`: `null`. A token that isn't the caller's, or doesn't exist, is ignored (still `200`).
 
 | Status | `code` | When |
 |---|---|---|
-| 400 | `VALIDATION_FAILED` | `token` missing or blank |
-| 400 | `VALIDATION_FAILED` | `token` longer than 4096 characters: `data.token` = "Use at most 4096 characters." (NTM-R53); nothing deleted |
+| 400 | `VALIDATION_FAILED` | `token` missing, or empty after cleaning (only spaces, tabs, newlines or invisible characters): "This field is required.", checked first (NTM-D56) |
+| 400 | `VALIDATION_FAILED` | `token` longer than 2048 characters: `data.token` = "Use at most 2048 characters." (NTM-R56); nothing deleted |
+| 400 | `VALIDATION_FAILED` | `token` with any other character: `data.token` = "Enter a valid value." (NTM-R57); nothing deleted |
 | 401 | — | Not signed in, bad token |
 
 ### GET /api/v1/notifications/preferences — change

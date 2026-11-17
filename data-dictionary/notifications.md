@@ -1,7 +1,7 @@
 # Notifications
 
 Owned by identity-service (schema `identity`). `notifications` comes from the web notifications spec (NTF, identity
-V1); `push_tokens` from `specs/notification-mobile` (identity V3).
+V1); `push_tokens` from `specs/notification-mobile` (identity V3, token rules tightened in V4 and V5).
 
 ## notifications
 
@@ -32,7 +32,7 @@ The Firebase Cloud Messaging token of one phone signed in to the app.
 |---|---|---|---|---|---|---|---|
 | `push_token_id` | uuid |  | Y | PK |  |  | auto generated |
 | `user_id` | uuid |  | Y | FK |  | `users` (identity) | the user signed in on the phone; a token registered by another user moves to that user |
-| `token` | text | 4096 | Y |  |  |  | the FCM registration token; unique (one row per phone); at most 4096 characters (`ck_push_tokens_token_length`, identity V4) |
+| `token` | text | 2048 | Y |  |  |  | the FCM registration token; unique (one row per phone); at most 2048 characters, only `A–Z a–z 0–9 _ : . -` (`ck_push_tokens_token_length`, `ck_push_tokens_token_chars`, identity V5) |
 | `platform` | enum |  | Y |  |  |  | `ANDROID` |
 | `created_at` | timestamp |  | Y |  | `current_timestamp` |  |  |
 | `last_seen_at` | timestamp |  | Y |  | `current_timestamp` |  | updated on every registration; rows not seen for 60 days are deleted by the `push-token-cleanup` job |

@@ -23,6 +23,18 @@ Every change to these docs gets an entry here, newest first. Code repos read it 
 
 ---
 
+## v6.2.0 — 2026-11-17
+**Author:** Vuththana
+
+- `api/identity-service.md`: notification-mobile v4.0.0–v6.1.0 contracts, 🚧 on the identity branch:
+  - push-tokens and unregister: `token` at most 2048 characters of `A–Z a–z 0–9 _ : . -` ("Use at most 2048 characters." / "Enter a valid value."), blank or whitespace-only first ("This field is required."), cleaned like every JSON string (NTM-D57);
+  - PUT preferences: `"push": null` = absent;
+  - sign-out: sent without a bearer, a blank `push_token` counts as none, a replayed logout of an ended session deletes it;
+  - new section: the FCM data message (`notification_id`, `alert_type`, `branch_name`; no `title` / `body`).
+- `data-dictionary/notifications.md`: `push_tokens.token` length 2048 and the FCM characters (`ck_push_tokens_token_length`, `ck_push_tokens_token_chars`, identity V5).
+
+**Impact:** identity-service: the `feature/notification-mobile` work (V4, V5, DTO checks). android-ui: none (already sends valid tokens and no sign-out bearer). web-ui: send `POST /auth/sign-out` without a bearer (it already does).
+
 ## v6.1.1 — 2026-11-17
 **Author:** Vuththana
 
