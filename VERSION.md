@@ -23,6 +23,41 @@ Every change to these docs gets an entry here, newest first. Code repos read it 
 
 ---
 
+## v6.0.0 — 2026-11-17
+**Author:** Vuththana
+
+- `specs/receipts/spec.md`: amended and re-approved (✅ v6.0.0) to settle the spec gaps from the second verify round and QA. The spec now has 59 requirements, 38 edge cases, 87 decisions and 32 messages. RCT-Q40..Q44 are answered as RCT-D83..D87, and RCT-D70..D82 were decided directly.
+  - Withdrawn: RCT-R05 → RCT-R60. `vendor_name` and `receipt_number` are stored trimmed; only spaces → null.
+  - Added:
+    - RCT-R59: a new receipt or a branch change onto a turned-off branch is refused with `422 BRANCH_INACTIVE` (RCT-M31 for an owner, RCT-M32 for a manager). Post, discard and reverse stay allowed.
+    - RCT-R61: the file's bytes must be a JPG, PNG, WebP or PDF (RCT-M01).
+    - RCT-R62: `receipt_date` is 2000-01-01 or later (RCT-M03 `TOO_EARLY`).
+    - RCT-R63: a malformed query value or a wrong-type field gets the RCT-M03 list shape, on every receipt endpoint.
+    - RCT-R64..R66 (web): the manager's own branch name on the detail page and form; the leave prompt on upload; a retried upload calls AI again.
+    - RCT-E35..E40: PDF saved unread; a non-UUID id gives 404; a page past the end; an owner's unknown branch filter gives 403; an unchanged turned-off branch still saves; the file's bytes decide its type.
+  - Reworded:
+    - §1 / §4a: a PDF isn't AI-read yet (RCT-D70).
+    - RCT-R31: an owner may filter by a turned-off branch.
+    - RCT-R03, R09, D09, E10, E17, E24, E28.
+  - §8 (proposed): trimmed text, the date bound, and `receipts.branch_id` set only to an active branch.
+- `specs/receipts/tasks.md`: T03, T07, T09, T18, T21, T22, T23 and T24 are marked ⟳ and reopened.
+
+**Impact:**
+- finance-service:
+  - the turned-off-branch rule (M31 / M32, refusal order RCT-D84);
+  - trimming; the file byte check; the date bound;
+  - the RCT-M03 shape for malformed query values and wrong-type fields;
+  - a non-UUID id gives 404; `page` below 0 counts as 0;
+  - tests that name RCT-R05: `ReceiptCreateIT`, `ReceiptInputParserTest`.
+- web-ui:
+  - no "couldn't read" card for a PDF; the leave prompt on upload; the manager's own branch name on the detail page and form;
+  - the list moves to the last page; a non-UUID id shows "Receipt not found.";
+  - tests that name RCT-R05: `e2e/receipts/logic.spec.ts`, `e2e/contracts/api-responses.spec.ts`.
+- Plan:
+  - §3 create, PUT, list and summary;
+  - §4 upload and detail;
+  - the §7 `ErrorCode` table (`BRANCH_INACTIVE`).
+
 ## v5.2.0 — 2026-11-17
 **Author:** Vuththana
 
