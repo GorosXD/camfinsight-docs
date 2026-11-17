@@ -93,4 +93,4 @@ A per-business yearly counter for document codes. Today only receipts use it (`d
 | `NOT_DUPLICATE` | null | JSON object `{ vendor_name, receipt_date, original_amount, original_currency }`, the snapshot the duplicate re-check compares with (RCT-D59) |
 | `POSTED` | null | the posted transaction's id |
 | `REVERSED` | null | the reversal reason |
-| `DISCARDED` | JSON object of the removed receipt | null |
+| `DISCARDED` | JSON object `{ receipt_code, vendor_name, original_amount, original_currency }` of the removed receipt | null |

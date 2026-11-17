@@ -23,6 +23,22 @@ Every change to these docs gets an entry here, newest first. Code repos read it 
 
 ---
 
+## v6.1.0 — 2026-11-18
+**Author:** Vuththana
+
+- `api/finance-service.md`: the receipts endpoints for spec v6.0.0 (🚧 on `feature/receipts-v6`):
+  - `422 BRANCH_INACTIVE` (RCT-M31 / M32) and the save refusal order on create and PUT;
+  - `TOO_EARLY`;
+  - the `INVALID` list for malformed queries and wrong-type fields;
+  - a non-UUID id gives 404;
+  - the file type is read from the bytes, and a PDF has no reading;
+  - trimmed text;
+  - an owner may filter by a turned-off branch.
+- `data-dictionary/finance.md`: the `DISCARDED` change_logs row names its four keys.
+- `specs/receipts/tasks.md`: T42 done; `specs/README.md`: stage shipped.
+
+**Impact:** finance-service #23 and web-ui #70 already follow these entries.
+
 ## v6.0.1 — 2026-11-17
 **Author:** Vuththana
 
