@@ -39,7 +39,7 @@ A paper or PDF receipt for an expense, saved for review and then posted as one `
 
 Indexes: unique (`business_id`, `receipt_code`); unique `transaction_id`; (`business_id`, `receipt_date`, `original_amount`)
 for the duplicate check; (`branch_id`, `status`). The yearly counter is kept per (`business_id`, `RCP`, year), like
-sales-service's `document_sequences`.
+sales-service's `document_sequences`; see [document_sequences](#document_sequences).
 
 ## receipt_lines
 
@@ -67,3 +67,30 @@ An uploaded file and its AI reading. Today only receipts use it.
 | `storage_key` | varchar | 500 | Y |  |  |  | RustFS (S3) key, private to the business |
 | `extraction` | jsonb |  |  |  |  |  | the AI reading as received, at most 256 KB; see [jsonb-shapes.md](jsonb-shapes.md#documentsextraction) |
 | `created_at` | timestamp |  | Y |  | `current_timestamp` |  |  |
+
+## document_sequences
+
+A per-business yearly counter for document codes. Today only receipts use it (`doc_type` `RCP`, giving
+`receipt_code` `RCP-{yyyy}-{seq}`), the same shape as sales-service's `document_sequences`. It is advanced with
+`INSERT … ON CONFLICT DO UPDATE … RETURNING`, so concurrent callers are serialised by the row lock.
+
+| Field Name | Datatype | Length | Required | PK/FK | Default | Reference | Description |
+|---|---|---|---|---|---|---|---|
+| `business_id` | uuid |  | Y | PK |  |  | identity-service business |
+| `doc_type` | varchar | 10 | Y | PK |  |  | the document kind: `RCP` (receipts) |
+| `seq_year` | integer |  | Y | PK |  |  | the year in Asia/Phnom_Penh the code is created |
+| `last_value` | bigint |  | Y |  |  |  | the last number handed out; the next code is `last_value + 1`, padded to at least 4 digits |
+
+## change_logs (receipts)
+
+`change_logs` is not fully written up yet (see the top of this file). Receipts write it with `record_type` `RECEIPT` and
+`record_id` = `receipt_id`; `previous_value` and `new_value` are text:
+
+| `action` | `previous_value` | `new_value` |
+|---|---|---|
+| `CREATED` | null | JSON object of the saved fields and lines (never the AI reading) |
+| `UPDATED` | JSON object of the changed fields, before | JSON object of the changed fields, after; also `status` and `duplicate_of_transaction_id` / `duplicate_of_receipt_id` when they changed. A save that changes nothing writes no row (RCT-R56) |
+| `NOT_DUPLICATE` | null | JSON object `{ vendor_name, receipt_date, original_amount, original_currency }`, the snapshot the duplicate re-check compares with (RCT-D59) |
+| `POSTED` | null | the posted transaction's id |
+| `REVERSED` | null | the reversal reason |
+| `DISCARDED` | JSON object `{ receipt_code, vendor_name, original_amount, original_currency }` of the removed receipt | null |

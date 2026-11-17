@@ -1,6 +1,6 @@
 # Spec: Receipts
 
-**Prefix:** `RCT` · **Status:** ✅ Approved · **Version:** v5.0.0 · **Author:** Vuththana
+**Prefix:** `RCT` · **Status:** ✅ Approved · **Version:** v6.0.0 · **Author:** Vuththana
 **Tables:** [`receipts`](../../data-dictionary/finance.md#receipts), [`receipt_lines`](../../data-dictionary/finance.md#receipt_lines), [`documents`](../../data-dictionary/finance.md#documents) · reads `financial_accounts`, `business_categories`, `transactions`, `bank_transactions`, `change_logs`
 **Endpoints:** [api/finance-service.md](../../api/finance-service.md) · listed in §9
 **Routes:** `/financial-records/receipts` (Owner, Manager) · `/financial-records/receipts/upload` (Owner, Manager) · `/financial-records/receipts/new` (Owner, Manager) · `/financial-records/receipts/[id]` (Owner, Manager)
@@ -10,7 +10,7 @@
 A shop pays for small things every day (supplies, repairs, fuel) and keeps a paper receipt. Today the owner or branch
 manager can have AI read a receipt photo in the web app, but finance-service can't save it, so the receipt is lost and
 the expense has to be typed again as a transaction. This feature saves receipts in finance-service: from an AI-read
-photo or PDF, or typed in by hand. The user checks the fields, the system warns about a possible duplicate, and the
+photo, a PDF or typed in by hand (a PDF isn't AI-read yet, RCT-D70). The user checks the fields, the system warns about a possible duplicate, and the
 receipt is posted as one expense transaction. A posted receipt is never edited or deleted; it is reversed.
 
 - **In:** upload a receipt file with its AI reading and save it for review; type in a receipt with no file; list,
@@ -55,7 +55,7 @@ receipt is posted as one expense transaction. A posted receipt is never edited o
 | **RCT-D06** | Possible duplicate | Same vendor (ignoring case and outer spaces), same receipt date, same total and currency (answered 2026-11-16 by Vuththana). What it is compared against: RCT-Q03. |
 | **RCT-D07** | Reversal | Posts one opposite transaction, sets the receipt to `REVERSED`, and requires a reason. It is refused while the expense is matched to a bank statement line (answered 2026-11-16 by Vuththana). |
 | **RCT-D08** | Typed-in receipts | Allowed with no file. They post with transaction source `MANUAL_ENTRY`; receipts with a file post with `AI_RECEIPT` (answered 2026-11-16 by Vuththana). |
-| **RCT-D09** | Files | JPG, PNG, WebP or PDF, at most 10 MB, the same as the existing attachments endpoint. An unreadable file is still saved, with an empty form (answered 2026-11-16 by Vuththana). |
+| **RCT-D09** | Files | JPG, PNG, WebP or PDF, at most 10 MB, the same as the existing attachments endpoint. An unreadable file is still saved, with an empty form; "a file" means its bytes are one of these types (RCT-D73) (answered 2026-11-16 by Vuththana). |
 | **RCT-D10** | Branch and rate at posting | The branch is the account's branch; a business-wide account needs a chosen branch. `exchange_rate` and `usd_equivalent` are set by the server from `businesses.exchange_rate` when the receipt is posted (answered 2026-11-16 by Vuththana). |
 | **RCT-D11** | List | Server-side paging, 20 a page, newest `receipt_date` then `created_at` first (answered 2026-11-16 by Vuththana). |
 | **RCT-D12** | Receipt code | `RCP-{yyyy}-{seq}`: a per-business yearly counter, like sales-service's `INV-2026-0001` (answered 2026-11-16 by Vuththana). |
@@ -116,6 +116,24 @@ receipt is posted as one expense transaction. A posted receipt is never edited o
 | **RCT-D67** | Trimming the reason | The reverse `reason` is trimmed before the 1–500 check; a reason of only spaces gets RCT-M13 (answered 2026-11-16 by Vuththana). |
 | **RCT-D68** | RCT-M03 problem codes | The `problem` codes are listed under §6 (RCT-M03), with `REQUIRED` added (RCT-D53) (answered 2026-11-16 by Vuththana). |
 | **RCT-D69** | Reference of a posted transaction | RCT-R55's reference is the transaction's `reference_number`, or its id when that is empty (as RCT-M16); `transaction_id` is returned too (answered 2026-11-16 by Vuththana). |
+| **RCT-D70** | PDF receipts | Only images go to AI extract; a PDF is saved with no reading and empty fields, to be typed in, and the web shows no "We couldn't read this receipt" card for it. Revisit when the AI service reads PDFs (answered 2026-11-17 by Vuththana). |
+| **RCT-D71** | Deactivated branch | An owner may filter the list and summary by a deactivated branch (to see its receipts). A new receipt, or a save that changes the branch, can't land on a deactivated branch, whether the branch is sent or taken from the account: RCT-M31 (RCT-M32 for a manager, RCT-D85). A receipt already on that branch stays usable (RCT-D36) (answered 2026-11-17 by Vuththana). |
+| **RCT-D72** | Trimmed text | `vendor_name` and `receipt_number` are stored trimmed, and a value of only spaces is stored as null; lengths count after trimming (answered 2026-11-17 by Vuththana). |
+| **RCT-D73** | File contents | The file's bytes must match a JPG, PNG, WebP or PDF; a file whose content isn't one of these is refused with RCT-M01 whatever type it declares (answered 2026-11-17 by Vuththana). |
+| **RCT-D74** | Oldest receipt date | `receipt_date` is 2000-01-01 or later; an earlier date is refused when saving with RCT-M03 (`problem` `TOO_EARLY`) (answered 2026-11-17 by Vuththana). |
+| **RCT-D75** | Shape of every 400 | A malformed query value (e.g. `status=BOGUS`) and a body field of the wrong type (e.g. a non-text `reason`) get RCT-M03's `[{field, problem: INVALID, message}]` shape, like every other validation error (answered 2026-11-17 by Vuththana). |
+| **RCT-D76** | Malformed receipt id | A receipt id in the path that isn't a UUID answers 404 RCT-M08, in the API and the web, the same as an unknown id (answered 2026-11-17 by Vuththana). |
+| **RCT-D77** | Page past the end | A page past the last one returns no items with the real `total_elements` and `total_pages`; a `page` below 0 counts as 0. The web then moves to the last page (answered 2026-11-17 by Vuththana). |
+| **RCT-D78** | Unknown branch filter | An owner's `branchId` that isn't a branch of the business stays `403` RCT-M22 (answered 2026-11-17 by Vuththana). |
+| **RCT-D79** | Manager's own branch | The manager's detail page and form show their own branch name; only the list hides the branch column (RCT-D60) (answered 2026-11-17 by Vuththana). |
+| **RCT-D80** | Leave prompt on upload | The upload page asks before leaving once a file is picked and not yet saved (answered 2026-11-17 by Vuththana). |
+| **RCT-D81** | Retried upload and AI | A retried upload calls AI extract again; that cost is accepted (RCT-D32) (answered 2026-11-17 by Vuththana). |
+| **RCT-D82** | Match with no branch | For a manager, a duplicate match with no branch counts as another branch's (RCT-R46, RCT-E28) (answered 2026-11-17 by Vuththana). |
+| **RCT-D83** | Turned-off branch and finishing a receipt | Posting, discarding and reversing a receipt already on a turned-off branch stay allowed; RCT-R59 refuses only a new receipt or a branch change (answered 2026-11-17 by Vuththana). |
+| **RCT-D84** | Order of save refusals | 400 RCT-M03 → 404 RCT-M08 → 403 RCT-M11 → 422 RCT-M31 / RCT-M32 (access before state), like RCT-D61 (answered 2026-11-17 by Vuththana). |
+| **RCT-D85** | Manager on a turned-off branch | The same `422 BRANCH_INACTIVE`, with the manager's own text RCT-M32 "Your branch is turned off. Ask the owner to turn it on." (answered 2026-11-17 by Vuththana). |
+| **RCT-D86** | Where the new rules apply | RCT-R63 applies to every receipt endpoint; RCT-R59, RCT-R60 and RCT-R62 apply to `PUT` as well as create (answered 2026-11-17 by Vuththana). |
+| **RCT-D87** | Web decisions get IDs | RCT-D79, RCT-D80 and RCT-D81 become RCT-R64, RCT-R65 and RCT-R66 so tests can name them (answered 2026-11-17 by Vuththana). |
 
 ## 4. Journeys
 
@@ -137,13 +155,14 @@ sequenceDiagram
     UI->>U: /financial-records/receipts/[id] to review
 ```
 
-If AI can't read the file, the web still saves it, with the reading it got (or none) and no fields. The user then
-types the fields in. Requirements: RCT-R01 to RCT-R08, RCT-R41 to RCT-R43.
+Only images go to AI extract; a PDF is saved with no reading and empty fields (RCT-D70). If AI can't read an image, the
+web still saves it, with the reading it got (or none) and no fields. The user then types the fields in. Requirements:
+RCT-R01 to RCT-R04, RCT-R06 to RCT-R08, RCT-R41 to RCT-R43, RCT-R59 to RCT-R63, RCT-R65, RCT-R66.
 
 ### 4b. Type in a receipt
 
 `/financial-records/receipts/new`. The same form with no file, saved with
-`POST /api/v1/financial-records/receipts` and no file part. Requirements: RCT-R01, RCT-R04 to RCT-R08, RCT-R42, RCT-R43, RCT-R57.
+`POST /api/v1/financial-records/receipts` and no file part. Requirements: RCT-R01, RCT-R04, RCT-R06 to RCT-R08, RCT-R42, RCT-R43, RCT-R57, RCT-R59, RCT-R60, RCT-R62.
 
 ### 4c. Review, save for later and post
 
@@ -160,7 +179,7 @@ sequenceDiagram
     API-->>UI: 200 POSTED + transaction_id / 422 RCT-M04..M07, M24, M25 / 409 RCT-M10, M23
 ```
 
-Requirements: RCT-R09 to RCT-R22, RCT-R44, RCT-R45, RCT-R56.
+Requirements: RCT-R09 to RCT-R22, RCT-R44, RCT-R45, RCT-R56, RCT-R64.
 
 ### 4d. Possible duplicate
 
@@ -173,7 +192,7 @@ Requirements: RCT-R23 to RCT-R26, RCT-R46, RCT-R49, RCT-R58.
 ### 4e. List
 
 `/financial-records/receipts` shows the cards, the status tabs, the filters, a page of rows, and a search box.
-Requirements: RCT-R30 to RCT-R35, RCT-R40, RCT-R50, RCT-R55.
+Requirements: RCT-R30 to RCT-R35, RCT-R40, RCT-R50, RCT-R55, RCT-R63.
 
 ### 4f. Discard
 
@@ -189,9 +208,17 @@ From a posted receipt: a reason, then `POST .../{id}/reverse`. Requirements: RCT
 
 - **RCT-R01** · Owner, Manager · §4a — When a receipt is saved, the system creates it with a new `receipt_code` `RCP-{yyyy}-{seq}`, unique per business (RCT-D12, RCT-D16), and returns it with 201.
 - **RCT-R02** · Owner, Manager · §4a — A file that isn't JPG, PNG, WebP or PDF is refused with RCT-M01, and a file over 10 MB with RCT-M02; nothing is saved.
-- **RCT-R03** · Owner, Manager · §4a — When a file is sent, the system stores it in RustFS under a key private to the business and creates one `documents` row. The row holds the file's name, content type, size, the key, and the AI reading as sent in `documents.extraction` (RCT-D17). `receipts.document_id` points to the row.
+- **RCT-R03** · Owner, Manager · §4a — When a file is sent, the system stores it in RustFS under a key private to the business and creates one `documents` row. The row holds the file's name, content type, size, the key, and the AI reading as sent in `documents.extraction` (RCT-D17; none for a PDF, RCT-D70). `receipts.document_id` points to the row.
 - **RCT-R04** · Owner, Manager · §4a — A new receipt's `branch_id` is the manager's branch, the owner's picked branch, or null for an owner on "All branches". A sent `financial_account_id` overrides this (RCT-R12).
-- **RCT-R05** · Owner, Manager · §4a — The fields sent with a new receipt are saved as they are, even when incomplete (RCT-D15). Each sent field must still meet its dictionary length and type, or the request is refused with RCT-M03 naming the field.
+- ~~**RCT-R05**~~ withdrawn in v6.0.0 — replaced by RCT-R60 (text is trimmed before saving, RCT-D72).
+- **RCT-R59** · Owner, Manager · §4a — A new receipt, or a save that changes its branch, is refused when the branch it would get is turned off — whether the branch is sent, taken from the account (RCT-R12) or the manager's own (RCT-R04): RCT-M31 for an owner, RCT-M32 for a manager; nothing is saved (RCT-D71, RCT-D85). A branch going to null (an owner's "All branches") is not a turned-off branch. Posting, discarding and reversing a receipt already on a turned-off branch stay allowed (RCT-D83). Save refusals come in the order of RCT-D84.
+- **RCT-R60** · Owner, Manager · §4a — The fields sent with a receipt are saved even when incomplete (RCT-D15). `vendor_name` and `receipt_number` are stored trimmed, and a value of only spaces is stored as null (RCT-D72). Each sent field must still meet its dictionary length (counted after trimming) and type, or the request is refused with RCT-M03 naming the field.
+- **RCT-R61** · Owner, Manager · §4a — A file whose content isn't a JPG, PNG, WebP or PDF is refused with RCT-M01, whatever type it declares; nothing is saved (RCT-D73).
+- **RCT-R62** · Owner, Manager · §4a — A `receipt_date` before 2000-01-01 is refused when saving with RCT-M03, `problem` `TOO_EARLY` (RCT-D74).
+- **RCT-R63** · Owner, Manager · §4e — A malformed query value, or a body field of the wrong type, on any receipt endpoint is refused with RCT-M03 in the `[{field, problem: INVALID, message}]` shape (RCT-D75).
+- **RCT-R64** · Manager · §4c — The detail page and the form show the manager's own branch name; only the list hides the branch column (RCT-D79).
+- **RCT-R65** · Owner, Manager · §4a — The upload page asks before leaving once a file is picked and not yet saved (RCT-D80).
+- **RCT-R66** · Owner, Manager · §4a — A retried upload sends the file to AI extract again (RCT-D81).
 - **RCT-R06** · Owner, Manager · §4a — A new receipt's status is `POSSIBLE_DUPLICATE` when RCT-R23 finds a match, otherwise `NEEDS_REVIEW`.
 - **RCT-R07** · Owner, Manager · §4a — `receipts.created_by_user_id` is the caller and `created_at` is now. A `change_logs` row records the creation.
 - **RCT-R08** · Owner, Manager · §4b — A receipt saved with no file has `document_id` null.
@@ -202,7 +229,7 @@ From a posted receipt: a reason, then `POST .../{id}/reverse`. Requirements: RCT
 
 ### Review and save for later (§4c)
 
-- **RCT-R09** · Owner, Manager · §4c — While a receipt is `NEEDS_REVIEW` or `POSSIBLE_DUPLICATE`, `PUT .../{id}` replaces its fields and its lines with the ones sent, under the same rule as RCT-R05.
+- **RCT-R09** · Owner, Manager · §4c — While a receipt is `NEEDS_REVIEW` or `POSSIBLE_DUPLICATE`, `PUT .../{id}` replaces its fields and its lines with the ones sent, under the same rule as RCT-R60.
 - **RCT-R10** · Owner, Manager · §4c — After each save, the duplicate check (RCT-R23) runs again. A receipt marked not a duplicate (RCT-R25) stays `NEEDS_REVIEW` unless the vendor, date, total or currency changed (RCT-D59, RCT-D66).
 - **RCT-R11** · Owner, Manager · §4c — Editing a `POSTED` or `REVERSED` receipt is refused with RCT-M09 (RCT-D13).
 - **RCT-R12** · Owner, Manager · §4c — When `financial_account_id` is set to an account with a branch, `receipts.branch_id` becomes that branch, whatever branch was sent (RCT-D26).
@@ -250,7 +277,7 @@ From a posted receipt: a reason, then `POST .../{id}/reverse`. Requirements: RCT
   - `status`
   - `businessCategoryId` and `financialAccountId`
   - `dateFrom` and `dateTo` on `receipt_date`, inclusive
-  - `branchId`: an owner may pick any branch of the business; a manager sending another branch gets RCT-M22, the same as other finance lists
+  - `branchId`: an owner may pick any branch of the business, also a deactivated one (RCT-D71); a manager sending another branch gets RCT-M22, the same as other finance lists
   - `search`, which matches `vendor_name` or `receipt_number` (contains, case-insensitive), or, when the search is a number, also the total as RCT-R50 says (any of them matches)
 - **RCT-R32** · Owner, Manager · §4e — Each row has:
   - `receipt_id` and `receipt_code`
@@ -290,29 +317,29 @@ From a posted receipt: a reason, then `POST .../{id}/reverse`. Requirements: RCT
 
 | Field | Rule (from the data dictionary) | Requirement |
 |---|---|---|
-| `receipts.vendor_name` | varchar 100; required to post | RCT-R05, RCT-R20 |
-| `receipts.receipt_number` | varchar 50; optional | RCT-R05 |
-| `receipts.receipt_date` | date; required to post; not after today | RCT-R20, RCT-R21 |
+| `receipts.vendor_name` | varchar 100; trimmed; required to post | RCT-R20, RCT-R60 |
+| `receipts.receipt_number` | varchar 50; optional; trimmed | RCT-R60 |
+| `receipts.receipt_date` | date; 2000-01-01 or later (else RCT-M03 `TOO_EARLY`); required to post; not after today | RCT-R20, RCT-R21, RCT-R62 |
 | `receipts.original_amount` | numeric(15,2); the total; > 0 to post | RCT-R20 |
-| `receipts.original_currency` | enum USD, KHR | RCT-R05 |
+| `receipts.original_currency` | enum USD, KHR | RCT-R60 |
 | `receipts.business_category_id` | an active `EXPENSE` category; required to post | RCT-R20, RCT-R22 |
 | `receipts.financial_account_id` | an active account in scope; required to post | RCT-R14, RCT-R22 |
 | `receipts.reversal_reason` | varchar 500; required to reverse | RCT-R38 |
-| `receipt_lines.description` | varchar 200 | RCT-R05 |
+| `receipt_lines.description` | varchar 200 | RCT-R60 |
 | `documents.size_bytes` | at most 10 MB (10 485 760) | RCT-R02 |
 
 ## 6. Messages
 
 | ID | HTTP · code | Text (English; Khmer later) | Used by |
 |---|---|---|---|
-| **RCT-M01** | `415 · UNSUPPORTED_FILE_TYPE` | "This file type can't be read. Upload a JPG, PNG, WebP or PDF of one receipt." | RCT-R02 |
+| **RCT-M01** | `415 · UNSUPPORTED_FILE_TYPE` | "This file type can't be read. Upload a JPG, PNG, WebP or PDF of one receipt." | RCT-R02, RCT-R61 |
 | **RCT-M02** | `413 · FILE_TOO_LARGE` | "The file is larger than 10 MB." | RCT-R02 |
-| **RCT-M03** | `400 · VALIDATION_FAILED` | "{field} {problem}" (one per field, e.g. "vendor_name is at most 100 characters") | RCT-R05, RCT-R41, RCT-R42, RCT-R43 |
+| **RCT-M03** | `400 · VALIDATION_FAILED` | "{field} {problem}" (one per field, e.g. "vendor_name is at most 100 characters") | RCT-R41, RCT-R42, RCT-R43, RCT-R60, RCT-R62, RCT-R63 |
 | **RCT-M04** | `422 · RECEIPT_INCOMPLETE` | "Fix {n} fields to save this receipt" (one message with a count: "Fix 1 field to save this receipt" when {n} is 1; with the list of fields) | RCT-R20 |
 | **RCT-M05** | `422 · RECEIPT_DATE_IN_FUTURE` | "Receipt date can't be in the future." | RCT-R21 |
 | **RCT-M06** | `422 · ACCOUNT_INACTIVE` | "'{account}' is inactive" | RCT-R22 |
 | **RCT-M07** | `422 · CATEGORY_INACTIVE` | "'{category}' is inactive" | RCT-R22 |
-| **RCT-M08** | `404 · NOT_FOUND` | "Receipt not found." | RCT-R09, RCT-R16, RCT-R25, RCT-R35, RCT-R55, RCT-R36, RCT-R38, RCT-E02, RCT-E03, RCT-E04, RCT-E19, RCT-E29 |
+| **RCT-M08** | `404 · NOT_FOUND` | "Receipt not found." | RCT-R09, RCT-R16, RCT-R25, RCT-R35, RCT-R55, RCT-R36, RCT-R38, RCT-E02, RCT-E03, RCT-E04, RCT-E19, RCT-E29, RCT-E36 |
 | **RCT-M09** | `409 · RECEIPT_NOT_EDITABLE` | "This receipt is {status} and can't be changed." ({status} in lowercase words, RCT-D46) | RCT-R11, RCT-R16, RCT-R37 |
 | **RCT-M10** | `409 · RECEIPT_POSSIBLE_DUPLICATE` | "This receipt looks like an expense that is already saved. Compare them, then choose what to do so nothing is counted twice." | RCT-R16 |
 | **RCT-M11** | `403 · BRANCH_ACCESS_DENIED` | "You can only use accounts of your branch." | RCT-R14 |
@@ -334,10 +361,12 @@ From a posted receipt: a reason, then `POST .../{id}/reverse`. Requirements: RCT
 | **RCT-M28** | `409 · TRANSACTION_NOT_REVERSIBLE` | "Change this from its receipt" (new text; the code is reused for edits too, RCT-D38) | RCT-R47, RCT-R48, RCT-R52, RCT-R53 |
 | **RCT-M29** | `200` | "Marked as not a duplicate" | RCT-R25 |
 | **RCT-M30** | `409 · RECEIPT_NOT_REVERSIBLE` | "Only a posted receipt can be reversed." | RCT-R54, RCT-E32 |
+| **RCT-M31** | `422 · BRANCH_INACTIVE` | "'{branch}' is turned off. Pick another branch or account." | RCT-R59 |
+| **RCT-M32** | `422 · BRANCH_INACTIVE` | "Your branch is turned off. Ask the owner to turn it on." | RCT-R59 |
 
 Message number 20 was skipped and is not used. RCT-M06, RCT-M07, RCT-M22 and RCT-M23 to RCT-M26 are finance-service's existing texts, kept as they are. RCT-M23's advice "Date the correction in the next period" fits posting; for a reversal (dated today) the user reopens the reconciliation instead, kept as they are.
 RCT-M03's response carries the field name and a problem code; the English text is built from them, so it can be
-translated later. The `problem` codes (RCT-D68): `REQUIRED` "{field} is required" (RCT-M13's text for `reason`), `TOO_LONG` "{field} is at most {max} characters", `NEGATIVE` "{field} is 0 or more", `OUT_OF_RANGE` "{field} is from 0 to 100", `TOO_MANY_DIGITS` "{field} has at most {int} digits and {dec} decimals", `KHR_DECIMALS` "original_amount has no decimals for KHR", `INVALID` "{field} isn't a valid {date / number / currency / id}", `NOT_FOUND` "{field} wasn't found", `TOO_MANY` "lines has at most 100 items", `NOT_AN_OBJECT` "extraction must be a JSON object", `TOO_LARGE` "extraction is at most 256 KB".
+translated later. The `problem` codes (RCT-D68): `REQUIRED` "{field} is required" (RCT-M13's text for `reason`), `TOO_LONG` "{field} is at most {max} characters", `NEGATIVE` "{field} is 0 or more", `OUT_OF_RANGE` "{field} is from 0 to 100", `TOO_MANY_DIGITS` "{field} has at most {int} digits and {dec} decimals", `KHR_DECIMALS` "original_amount has no decimals for KHR", `INVALID` "{field} isn't a valid {date / number / currency / id}", `NOT_FOUND` "{field} wasn't found", `TOO_MANY` "lines has at most 100 items", `NOT_AN_OBJECT` "extraction must be a JSON object", `TOO_LARGE` "extraction is at most 256 KB", `TOO_EARLY` "{field} is 2000-01-01 or later" (RCT-D74).
 
 In RCT-M16 to RCT-M18, `{receipt}` is `receipt_code`, `{transaction}` is the transaction's `reference_number` or, when empty, its id, `{amount}` is the total with its currency, with thousands separators, 2 decimals for USD and none for KHR ("1,250.50 USD", "41,000 KHR", RCT-D48), and `{account}` is `financial_accounts.account_name`.
 
@@ -352,14 +381,14 @@ In RCT-M16 to RCT-M18, `{receipt}` is `receipt_code`, `{transaction}` is the tra
 - **RCT-E07** · Timing — `receipt_date` is today in Asia/Phnom_Penh but tomorrow in UTC (or the other way) → today is taken in Asia/Phnom_Penh (RCT-R21).
 - **RCT-E08** · Money — A KHR receipt has a decimal total → refused with RCT-M03 ("original_amount has no decimals for KHR"), the same as other KHR amounts in finance-service.
 - **RCT-E09** · Money — The exchange rate changes between saving and posting → the rate at posting is used (RCT-R18); the summary card counts an unposted receipt at today's rate (RCT-R33).
-- **RCT-E10** · Data — The file was saved but AI couldn't read it → the receipt is `NEEDS_REVIEW` with empty fields, the file kept, and `extraction` as received (its fields missing or null) or null. The web shows the "We couldn't read this receipt" card.
+- **RCT-E10** · Data — An image was saved but AI couldn't read it → the receipt is `NEEDS_REVIEW` with empty fields, the file kept, and `extraction` as received (its fields missing or null) or null. The web shows the "We couldn't read this receipt" card.
 - **RCT-E11** · Data — The file upload to RustFS fails → nothing is saved (no receipt row, no `documents` row), and RCT-M19 is returned.
 - **RCT-E12** · Data — The stored file can't be deleted while discarding → the receipt is still deleted, and the orphaned file key is logged to be cleaned by hand (RCT-D31).
 - ~~**RCT-E13**~~ withdrawn in v5.0.0 — replaced by RCT-E32 (a receipt that isn't posted gets RCT-M30, RCT-D47).
 - **RCT-E14** · State — The duplicate match is itself discarded or reversed before this receipt is resolved → the receipt stays `POSSIBLE_DUPLICATE` until it is saved again (the check then no longer finds it) or marked not a duplicate (RCT-R10, RCT-R25; the status change is logged, RCT-D65). A discarded match leaves `duplicate_of_receipt_id` null.
 - **RCT-E15** · Actions — Two users edit the same unposted receipt → the last save wins (RCT-D24).
 - **RCT-E16** · Empty — No receipts in scope → the list is empty, and the summary counts and totals are 0.
-- **RCT-E17** · Permissions — The receipt's branch is deactivated, and an owner or manager edits, posts, discards or reverses the receipt → allowed, as for other finance records (RCT-D36).
+- **RCT-E17** · Permissions — The receipt's branch is deactivated, and an owner or manager edits (without changing its branch), posts, discards or reverses the receipt → allowed, as for other finance records (RCT-D36, RCT-D83). A save with the branch unchanged is saved (RCT-E39).
 - **RCT-E18** · Limits — A receipt is saved with 101 lines → refused with RCT-M03 (RCT-R42).
 - **RCT-E19** · States — The file is asked for on a receipt with no file (typed in) → 404 with RCT-M08.
 - ~~**RCT-E20**~~ withdrawn in v4.0.0 — replaced by RCT-E29 (the loser of a discard race gets 404, RCT-D39).
@@ -369,13 +398,19 @@ In RCT-M16 to RCT-M18, `{receipt}` is `receipt_code`, `{transaction}` is the tra
 - **RCT-E32** · Actions — A user reverses a receipt that isn't `POSTED`, also an already `REVERSED` one → RCT-M30; if two reversals race, the one that finds it `REVERSED` gets RCT-M30, and if both pass the status check the ledger lets one through and the other gets RCT-M26 (RCT-R54, RCT-D61).
 - **RCT-E33** · Dependency — identity-service can't give today's rate and an unposted KHR receipt is in scope → the summary answers with its counts; the USD totals that needed the rate are null (RCT-R33, RCT-D63).
 - **RCT-E34** · State — The account or category was turned off after the receipt was posted → reversing still goes ahead (RCT-R38, RCT-D57).
+- **RCT-E35** · Data — A PDF is uploaded → it is saved with no reading (`extraction` null) and empty fields, `NEEDS_REVIEW`; the web shows no "We couldn't read this receipt" card (RCT-D70).
+- **RCT-E36** · Data — A receipt is opened or acted on with an id that isn't a UUID → 404 RCT-M08, in the API and the web (RCT-D76).
+- **RCT-E37** · Data — The list is asked for a page past the last one → no items, with the real `total_elements` and `total_pages`; `page` below 0 counts as 0; the web moves to the last page (RCT-D77).
+- **RCT-E38** · Permissions — An owner filters by a `branchId` that isn't a branch of the business → 403 RCT-M22 (RCT-D78).
+- **RCT-E39** · State — A receipt already on a turned-off branch is saved with its branch unchanged → saved (RCT-R59 refuses only a branch change, RCT-D83).
+- **RCT-E40** · Data — A PDF is declared `image/jpeg`, or an image has a `.pdf` name → the file's bytes decide its type, and whether it goes to AI extract (RCT-R61, RCT-D70, RCT-D73).
 - **RCT-E21** · Data — The file was stored but saving the receipt fails → the stored file is deleted (if that fails too, its key is logged as in RCT-E12) and RCT-M19 is returned.
 - **RCT-E22** · Permissions — A manager is moved to another branch → the old branch's receipts disappear from their list and open as 404 (RCT-R30); nothing about the receipts changes.
 - **RCT-E23** · Data — The same file is uploaded twice → both are saved; the possible-duplicate check (RCT-R23) compares fields, not files.
-- **RCT-E24** · Actions — The browser retries an upload → a second receipt is created and, having the same fields, comes back `POSSIBLE_DUPLICATE` of the first (RCT-D32).
+- **RCT-E24** · Actions — The browser retries an upload → a second receipt is created and, having the same fields, comes back `POSSIBLE_DUPLICATE` of the first (RCT-D32); the file is sent to AI extract again (RCT-R66).
 - **RCT-E25** · Money — A KHR receipt is paid from a USD account → posting is refused with RCT-M24 (RCT-R44).
 - **RCT-E26** · Time — A receipt dated in a signed-off period is posted → refused with RCT-M23; the user changes the date or the reconciliation is reopened (RCT-R45).
-- **RCT-E28** · Permissions — A manager's receipt matches an expense of another branch → it is flagged, the manager sees RCT-M27 with no link or details, and can resolve it with "Not a duplicate" or discard (RCT-R46).
+- **RCT-E28** · Permissions — A manager's receipt matches an expense of another branch, or one with no branch (RCT-D82) → it is flagged, the manager sees RCT-M27 with no link or details, and can resolve it with "Not a duplicate" or discard (RCT-R46).
 - **RCT-E27** · Data — The AI reading is larger than 256 KB or isn't a JSON object → refused with RCT-M03; nothing is saved (RCT-R41).
 
 ## 8. Data dictionary changes
@@ -389,6 +424,9 @@ Every field below is new; the dictionary had no finance tables before.
 | `documents` | add table: `document_id` uuid PK, `business_id` uuid, `file_name` varchar 255, `content_type` varchar 100, `size_bytes` bigint, `storage_key` varchar 500, `extraction` jsonb, `created_at` timestamp | RCT-R03 | applied in v3.2.0 |
 | `documents.extraction` | add a jsonb shape: the `POST /ai/receipts/extract` response as is, at most 256 KB (RCT-D17, RCT-D18); marked 📝 in `jsonb-shapes.md` until the AI team confirms the confidence scale | RCT-R03, RCT-R41 | applied in v3.2.0; 📝 mark proposed |
 | `document_sequences` | add table: `business_id` uuid, `doc_type` varchar 10 (`RCP`), `seq_year` integer, `last_value` bigint; PK (`business_id`, `doc_type`, `seq_year`). The per-business yearly counter behind `receipt_code` (built in finance `V5__receipts.sql`, not merged yet) | RCT-R01 | proposed |
+| `receipts.vendor_name`, `receipts.receipt_number` | stored trimmed; only spaces → null (RCT-D72) | RCT-R60 | proposed |
+| `receipts.receipt_date` | 2000-01-01 or later (RCT-D74) | RCT-R62 | proposed |
+| `receipts.branch_id` | can only be set (new, or changed) to an active branch of identity-service's `branches` (RCT-D71) | RCT-R59 | proposed |
 | `change_logs.record_type` | add value `RECEIPT` (free text in the schema; noted on `receipts`) | RCT-R07 | applied in v3.2.0 |
 
 ## 9. Endpoints
@@ -397,16 +435,16 @@ All are finance-service (TRD §1a: finance owns the ledger), under `/api/v1/fina
 
 | Method · path | Service | Who | Requirements | In api/? |
 |---|---|---|---|---|
-| `POST /api/v1/financial-records/receipts` (multipart: `file` optional, `receipt` JSON with fields, lines and `extraction`) | finance-service | Owner, Manager | RCT-R01 to RCT-R08, RCT-R41 to RCT-R43, RCT-R57 | 📝 planned |
-| `GET /api/v1/financial-records/receipts` | finance-service | Owner, Manager | RCT-R30 to RCT-R32 | 📝 planned |
-| `GET /api/v1/financial-records/receipts/summary` | finance-service | Owner, Manager | RCT-R33 | 📝 planned |
-| `GET /api/v1/financial-records/receipts/{id}` | finance-service | Owner, Manager | RCT-R40, RCT-R46, RCT-R55 | 📝 planned |
-| `GET /api/v1/financial-records/receipts/{id}/document` | finance-service | Owner, Manager | RCT-R35 | 📝 planned |
-| `PUT /api/v1/financial-records/receipts/{id}` | finance-service | Owner, Manager | RCT-R09 to RCT-R14, RCT-R56 | 📝 planned |
-| `POST /api/v1/financial-records/receipts/{id}/post` | finance-service | Owner, Manager | RCT-R16 to RCT-R22, RCT-R44, RCT-R45 | 📝 planned |
-| `POST /api/v1/financial-records/receipts/{id}/not-duplicate` | finance-service | Owner, Manager | RCT-R25, RCT-R26 | 📝 planned |
-| `DELETE /api/v1/financial-records/receipts/{id}` | finance-service | Owner, Manager | RCT-R36, RCT-R37 | 📝 planned |
-| `POST /api/v1/financial-records/receipts/{id}/reverse` | finance-service | Owner, Manager | RCT-R38, RCT-R45, RCT-R54 | 📝 planned |
+| `POST /api/v1/financial-records/receipts` (multipart: `file` optional, `receipt` JSON with fields, lines and `extraction`) | finance-service | Owner, Manager | RCT-R01 to RCT-R04, RCT-R06 to RCT-R08, RCT-R41 to RCT-R43, RCT-R57, RCT-R59 to RCT-R63 | 📝 planned |
+| `GET /api/v1/financial-records/receipts` | finance-service | Owner, Manager | RCT-R30 to RCT-R32, RCT-R63 | 📝 planned |
+| `GET /api/v1/financial-records/receipts/summary` | finance-service | Owner, Manager | RCT-R33, RCT-R63 | 📝 planned |
+| `GET /api/v1/financial-records/receipts/{id}` | finance-service | Owner, Manager | RCT-R40, RCT-R46, RCT-R55, RCT-R63 | 📝 planned |
+| `GET /api/v1/financial-records/receipts/{id}/document` | finance-service | Owner, Manager | RCT-R35, RCT-R63 | 📝 planned |
+| `PUT /api/v1/financial-records/receipts/{id}` | finance-service | Owner, Manager | RCT-R09 to RCT-R14, RCT-R56, RCT-R59, RCT-R60, RCT-R62, RCT-R63 | 📝 planned |
+| `POST /api/v1/financial-records/receipts/{id}/post` | finance-service | Owner, Manager | RCT-R16 to RCT-R22, RCT-R44, RCT-R45, RCT-R63 | 📝 planned |
+| `POST /api/v1/financial-records/receipts/{id}/not-duplicate` | finance-service | Owner, Manager | RCT-R25, RCT-R26, RCT-R63 | 📝 planned |
+| `DELETE /api/v1/financial-records/receipts/{id}` | finance-service | Owner, Manager | RCT-R36, RCT-R37, RCT-R63 | 📝 planned |
+| `POST /api/v1/financial-records/receipts/{id}/reverse` | finance-service | Owner, Manager | RCT-R38, RCT-R45, RCT-R54, RCT-R63 | 📝 planned |
 
 | `POST /api/v1/bank-statements/transactions/{id}/reverse` (existing, changed) | finance-service | Owner, Manager | RCT-R47 | 📝 planned |
 | `PATCH /api/v1/bank-statements/transactions/{id}` (existing, changed) | finance-service | Owner, Manager | RCT-R48, RCT-R53 | 📝 planned |
@@ -522,7 +560,7 @@ in `api/` in this docs version.
 - **RCT-Q29** · §4g — `POST /bank-statements/transactions/categorize` can still change the category of a receipt's posted transaction. *Options:* (a) refuse the whole batch with RCT-M28; (b) skip those ids and report them; (c) accept it. → RCT-D44 (answered 2026-11-16 by Vuththana)
 - **RCT-Q30** · §4g — A receipt's own reversal transaction isn't pointed to by `receipts.transaction_id`, so it can still be PATCHed. *Options:* (a) lock it too (RCT-M28); (b) leave it editable. → RCT-D45 (answered 2026-11-16 by Vuththana)
 
-Question number 27 was skipped and is not used. RCT-D46 to RCT-D60 were decided directly from the `/sdd:verify` spec gaps (2026-11-16, Vuththana), with no question.
+Question number 27 was skipped and is not used. RCT-D46 to RCT-D60 were decided directly from the `/sdd:verify` spec gaps (2026-11-16, Vuththana), with no question. RCT-D70 to RCT-D82 were decided directly from the second verify and QA round (2026-11-17, Vuththana).
 
 - **RCT-Q31** · amend v5.0.0 — Which order do the reverse refusals follow? (a) 400 → 404 → RCT-M30 → RCT-M14 → RCT-M23; (b) RCT-M14 before RCT-M30. → RCT-D61 (answered 2026-11-16 by Vuththana)
 - **RCT-Q32** · amend v5.0.0 — Which code does RCT-M30 use? (a) reuse `RECEIPT_NOT_EDITABLE`; (b) new `RECEIPT_NOT_REVERSIBLE`. → RCT-D62 (answered 2026-11-16 by Vuththana)
@@ -533,3 +571,8 @@ Question number 27 was skipped and is not used. RCT-D46 to RCT-D60 were decided 
 - **RCT-Q37** · amend v5.0.0 — Is the reverse reason trimmed before the 1–500 check? (a) yes; (b) counted raw. → RCT-D67 (answered 2026-11-16 by Vuththana)
 - **RCT-Q38** · amend v5.0.0 — Where are the RCT-M03 problem codes listed? (a) in §6; (b) left to finance's code. → RCT-D68 (answered 2026-11-16 by Vuththana)
 - **RCT-Q39** · amend v5.0.0 — What is RCT-R55's transaction reference? (a) `reference_number`, else the id, plus `transaction_id`; (b) `reference_number` only. → RCT-D69 (answered 2026-11-16 by Vuththana)
+- **RCT-Q40** · amend v6.0.0 — Does RCT-R59 also refuse posting, discarding or reversing on a turned-off branch? (a) no, only a new receipt or a branch change; (b) yes. → RCT-D83 (answered 2026-11-17 by Vuththana)
+- **RCT-Q41** · amend v6.0.0 — Which save refusal wins? (a) 400 → 404 → M11 → M31; (b) 400 → 404 → M31 → M11; (c) unordered. → RCT-D84 (answered 2026-11-17 by Vuththana)
+- **RCT-Q42** · amend v6.0.0 — A manager whose own branch is turned off saves a receipt. (a) refuse with RCT-M31; (b) refuse with a manager's own text; (c) allow it. → RCT-D85 (answered 2026-11-17 by Vuththana)
+- **RCT-Q43** · amend v6.0.0 — Which endpoints do RCT-R59, R60, R62 and R63 cover? (a) R63 every endpoint, the others create and PUT; (b) only the rows they name. → RCT-D86 (answered 2026-11-17 by Vuththana)
+- **RCT-Q44** · amend v6.0.0 — Do RCT-D79, D80, D81 get requirements? (a) yes, R64–R66; (b) fold into existing ones; (c) leave as decisions. → RCT-D87 (answered 2026-11-17 by Vuththana)

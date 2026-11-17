@@ -7,19 +7,19 @@ size, total_elements, total_pages }`.
 | Status | Method | Path | Who | Spec |
 |---|---|---|---|---|
 | 📝 | GET | /api/v1/bank-statements/accounts (existing; entry written from the code) | Owner, Manager | [mobile-sales-management](../specs/mobile-sales-management/spec.md) MSL-R22 |
-| 🚧 | POST | /api/v1/financial-records/receipts | Owner, Manager | [receipts](../specs/receipts/spec.md) RCT-R01–R08, R41–R43, R57, R58 |
-| 🚧 | GET | /api/v1/financial-records/receipts | Owner, Manager | RCT-R30–R32, R50 |
-| 🚧 | GET | /api/v1/financial-records/receipts/summary | Owner, Manager | RCT-R33, E31, E33 |
-| 🚧 | GET | /api/v1/financial-records/receipts/{id} | Owner, Manager | RCT-R40, R46, R55 |
-| 🚧 | GET | /api/v1/financial-records/receipts/{id}/document | Owner, Manager | RCT-R35 |
-| 🚧 | PUT | /api/v1/financial-records/receipts/{id} | Owner, Manager | RCT-R09–R14, R56 |
+| 🚧 | POST | /api/v1/financial-records/receipts | Owner, Manager | [receipts](../specs/receipts/spec.md) RCT-R01–R04, R06–R08, R41–R43, R57–R63 |
+| 🚧 | GET | /api/v1/financial-records/receipts | Owner, Manager | RCT-R30–R32, R50, R63, E37, E38 |
+| 🚧 | GET | /api/v1/financial-records/receipts/summary | Owner, Manager | RCT-R33, R63, E31, E33 |
+| 🚧 | GET | /api/v1/financial-records/receipts/{id} | Owner, Manager | RCT-R40, R46, R55, R63, E36 |
+| 🚧 | GET | /api/v1/financial-records/receipts/{id}/document | Owner, Manager | RCT-R35, R63, E36 |
+| 🚧 | PUT | /api/v1/financial-records/receipts/{id} | Owner, Manager | RCT-R09–R14, R56, R59, R60, R62, R63, E39 |
 | 🚧 | POST | /api/v1/financial-records/receipts/{id}/post | Owner, Manager | RCT-R16–R22, R44, R45 |
 | 🚧 | POST | /api/v1/financial-records/receipts/{id}/not-duplicate | Owner, Manager | RCT-R25, R26 |
 | 🚧 | DELETE | /api/v1/financial-records/receipts/{id} | Owner, Manager | RCT-R36, R37 |
 | 🚧 | POST | /api/v1/financial-records/receipts/{id}/reverse | Owner, Manager | RCT-R38, R45, R51, R54 |
-| 🚧 | POST | /api/v1/bank-statements/transactions/{id}/reverse (existing, changed) | Owner, Manager | RCT-R47 |
-| 🚧 | PATCH | /api/v1/bank-statements/transactions/{id} (existing, changed) | Owner, Manager | RCT-R48, R53 |
-| 🚧 | POST | /api/v1/bank-statements/transactions/categorize (existing, changed) | Owner, Manager | RCT-R52, R53 |
+| ✅ | POST | /api/v1/bank-statements/transactions/{id}/reverse (existing, changed) | Owner, Manager | RCT-R47 |
+| ✅ | PATCH | /api/v1/bank-statements/transactions/{id} (existing, changed) | Owner, Manager | RCT-R48, R53 |
+| ✅ | POST | /api/v1/bank-statements/transactions/categorize (existing, changed) | Owner, Manager | RCT-R52, R53 |
 | ✅ | GET | /api/v1/bank-statements/transactions/{id} (existing, unchanged; the receipt duplicate panel opens a matching transaction with it) | Owner, Manager | RCT-R24 |
 
 ## Receipts
@@ -27,8 +27,10 @@ size, total_elements, total_pages }`.
 **Who, on every receipt endpoint.** An owner sees all branches (or one, with `branchId` where a filter exists); a manager
 only their own branch. A SERVICE token gets `403 FORBIDDEN_ROLE` "You don't have permission to do this."; no token gets
 `401`. A receipt of another business, or for a manager one of another branch or with no branch, or one a concurrent discard
-removed, answers `404 NOT_FOUND` "Receipt not found." (RCT-M08). On PUT and reverse a body that fails validation gets `400`
-before the receipt is looked up, whether or not it exists (RCT-D54).
+removed, answers `404 NOT_FOUND` "Receipt not found." (RCT-M08), and so does an id that isn't a UUID (RCT-E36). On PUT
+and reverse a body that fails validation gets `400` before the receipt is looked up, whether or not it exists (RCT-D54). A
+malformed query value (e.g. `status=BOGUS`, `page=x`) or a body field of the wrong type gets the `VALIDATION_FAILED` list
+below with `problem` `INVALID`, on every receipt endpoint (RCT-R63).
 
 **The receipt object** (`data` of create, PUT, post, not-duplicate and reverse; list rows omit `lines`): the
 [`receipts`](../data-dictionary/finance.md#receipts) fields — `receipt_id`, `receipt_code`, `business_id`, `branch_id`,
@@ -46,7 +48,7 @@ before the receipt is looked up, whether or not it exists (RCT-D54).
 **The detail object** (`GET /{id}`) is the receipt object plus:
 
 - `document`: `{ document_id, file_name, content_type, size_bytes }`, or null.
-- `extraction`: the stored AI reading, or null.
+- `extraction`: the stored AI reading, or null (always null for a PDF, RCT-E35).
 - `transaction_reference`: for `POSTED` and `REVERSED`, the posted transaction's `reference_number`, or its id when that is
   empty; otherwise null (RCT-R55).
 - `reconciliation_state`: `NOTHING_TO_RECONCILE` | `WAITING` | `MATCHED` when `POSTED`; null otherwise (RCT-R40).
@@ -66,43 +68,50 @@ before the receipt is looked up, whether or not it exists (RCT-D54).
 | `OUT_OF_RANGE` | "{field} is from 0 to 100" |
 | `TOO_MANY_DIGITS` | "{field} has at most {int} digits and {dec} decimals" |
 | `KHR_DECIMALS` | "original_amount has no decimals for KHR" |
-| `INVALID` | "{field} isn't a valid {date / number / currency / id}" |
+| `INVALID` | "{field} isn't a valid {date / number / currency / id / status / text / list / object}"; also a non-object body: field `body`, "body isn't a valid JSON object" |
 | `NOT_FOUND` | "{field} wasn't found" |
 | `TOO_MANY` | "lines has at most 100 items" |
 | `NOT_AN_OBJECT` | "extraction must be a JSON object" |
 | `TOO_LARGE` | "extraction is at most 256 KB" |
+| `TOO_EARLY` | "{field} is 2000-01-01 or later" (`receipt_date`, RCT-R62) |
 
 **The `receipt` JSON** (create and PUT). Every field is optional; on PUT a missing field becomes null. A total or line
 amount of 0 or less is accepted when saving and refused when posting.
 
 | Field | Rule at save |
 |---|---|
-| `receipt_number` | ≤ 50 characters |
-| `vendor_name` | ≤ 100 characters |
-| `receipt_date` | ISO date; a future date is allowed until posting |
+| `receipt_number` | ≤ 50 characters; stored trimmed, only spaces → null (RCT-R60) |
+| `vendor_name` | ≤ 100 characters; stored trimmed, only spaces → null (RCT-R60) |
+| `receipt_date` | ISO date, 2000-01-01 or later (`TOO_EARLY`); a future date is allowed until posting |
 | `business_category_id` | a category of this business; else `NOT_FOUND` |
 | `financial_account_id` | an account of this business; else `NOT_FOUND`. A manager may use only their branch's account or a business-wide one, else `403 BRANCH_ACCESS_DENIED` "You can only use accounts of your branch." (RCT-M11) |
-| `branch_id` | Owner: a branch of the business, else `403 BRANCH_ACCESS_DENIED` "You don't have access to this branch" (RCT-M22), skipped when it is the receipt's current branch. Manager: ignored. An account with a branch always sets the branch |
+| `branch_id` | Owner: a branch of the business, else `403 BRANCH_ACCESS_DENIED` "You don't have access to this branch" (RCT-M22), skipped when it is the receipt's current branch. Manager: ignored. An account with a branch always sets the branch. A new receipt, or a change of branch, onto a turned-off branch is refused with `422 BRANCH_INACTIVE` (RCT-R59) |
 | `subtotal`, `tax_amount` | ≥ 0, 13 digits and 2 decimals |
 | `tax_rate` | 0–100, 2 decimals |
 | `original_amount` | 13 digits and 2 decimals; no decimals for KHR |
 | `original_currency` | `USD` \| `KHR` |
 | `lines` | ≤ 100 of `{ description ≤ 200, quantity ≥ 0, unit_price ≥ 0, amount }`; `line_order` is the position sent, from 1 |
-| `extraction` | create only: a JSON object ≤ 256 KB, or null. Stored only with a file; PUT ignores it |
+| `extraction` | create only: a JSON object ≤ 256 KB, or null. Stored only with an image file (checked, then dropped for a PDF or no file); PUT ignores it |
 
 ### POST /api/v1/financial-records/receipts
 
 Multipart: `file` (optional; JPG, PNG, WebP or PDF, 1 byte to 10 MB) and `receipt` (the receipt JSON; missing means `{}`).
+The file's type is read from its bytes, whatever type or name it is sent with; that type is stored as `content_type` and
+names the stored file (RCT-R61, RCT-E40). A PDF is saved with no reading (RCT-E35).
 With a file, a `documents` row holds the file and the `extraction`; without one, `document_id` is null and the `extraction`
 is dropped after it is checked. The duplicate check runs (a reversal transaction is never a match). All checks run before
 the file is stored. `201 CREATED` "Receipt saved", `data`: the receipt, `NEEDS_REVIEW` or `POSSIBLE_DUPLICATE`.
 
+Errors, in this order:
+
 | Status | `code` | When |
 |---|---|---|
-| 400 | `VALIDATION_FAILED` | RCT-M03 |
-| 403 | `BRANCH_ACCESS_DENIED` | RCT-M11 or RCT-M22 |
+| 415 | `UNSUPPORTED_FILE_TYPE` | the file's bytes aren't a JPG, PNG, WebP or PDF, or it's empty (RCT-M01) |
 | 413 | `FILE_TOO_LARGE` | "The file is larger than 10 MB." (RCT-M02), also when the multipart limit trips |
-| 415 | `UNSUPPORTED_FILE_TYPE` | RCT-M01, also for an empty file |
+| 400 | `VALIDATION_FAILED` | RCT-M03 |
+| 403 | `BRANCH_ACCESS_DENIED` | a manager names another branch's account (RCT-M11) |
+| 403 | `BRANCH_ACCESS_DENIED` | an owner names a branch outside the business (RCT-M22) |
+| 422 | `BRANCH_INACTIVE` | the receipt's branch (sent, from the account, or the manager's own) is turned off: owner "'{branch}' is turned off. Pick another branch or account." (RCT-M31); manager "Your branch is turned off. Ask the owner to turn it on." (RCT-M32) |
 | 503 | `DEPENDENCY_UNAVAILABLE` | "We couldn't save the file. Try again." (RCT-M19) |
 
 ### GET /api/v1/financial-records/receipts
@@ -111,17 +120,18 @@ Query: `status`, `businessCategoryId`, `financialAccountId`, `dateFrom`, `dateTo
 receipts drop out when either is set), `branchId`, `search`, `page`, `size` (`sort` is ignored). `search` matches
 `vendor_name` or `receipt_number` (contains, case-insensitive), and when it is a plain number (`12.5`) also an
 `original_amount` equal to it. Order: `receipt_date` desc (no date last), `created_at` desc, `receipt_id`. An owner without
-`branchId` sees the whole business, including receipts with no branch. `200 OK`, `data`: a page of receipt rows without
-`lines`.
+`branchId` sees the whole business, including receipts with no branch; an owner may filter by a turned-off branch
+(RCT-R31). A page past the last one returns no items with the real `total_elements` / `total_pages`; `page` below 0 counts
+as 0 (RCT-E37). `200 OK`, `data`: a page of receipt rows without `lines`.
 
 | Status | `code` | When |
 |---|---|---|
-| 400 | `VALIDATION_FAILED` | a malformed query value |
-| 403 | `BRANCH_ACCESS_DENIED` | a manager asks for another branch (RCT-M22) |
+| 400 | `VALIDATION_FAILED` | a malformed query value, `problem` `INVALID` (RCT-R63) |
+| 403 | `BRANCH_ACCESS_DENIED` | a manager asks for another branch, or an owner a branch outside the business (RCT-M22) |
 
 ### GET /api/v1/financial-records/receipts/summary
 
-Query: `branchId`, scoped as the list. `200 OK`, `data`:
+Query: `branchId`, scoped as the list (an owner may pick a turned-off branch). `200 OK`, `data`:
 
 - `posted_this_month: { count, usd_total }`: `POSTED`, `receipt_date` in the current Asia/Phnom_Penh month; `usd_total` is
   the sum of the stored `usd_equivalent`.
@@ -154,15 +164,17 @@ Errors, in this order:
 | Status | `code` | When |
 |---|---|---|
 | 400 | `VALIDATION_FAILED` | the body, or a category or account not in the business (RCT-M03); before the lookup |
-| 403 | `BRANCH_ACCESS_DENIED` | a manager names another branch's account (RCT-M11) |
 | 404 | `NOT_FOUND` | RCT-M08 |
+| 403 | `BRANCH_ACCESS_DENIED` | a manager names another branch's account (RCT-M11) |
+| 403 | `BRANCH_ACCESS_DENIED` | an owner names a branch outside the business, unless it's the receipt's current branch (RCT-M22) |
 | 409 | `RECEIPT_NOT_EDITABLE` | "This receipt is posted and can't be changed." / "… reversed …" (RCT-M09) |
-| 403 | `BRANCH_ACCESS_DENIED` | an owner names a branch outside the business (RCT-M22) |
+| 422 | `BRANCH_INACTIVE` | the branch changes to a turned-off one (RCT-M31 / RCT-M32); a receipt kept on a turned-off branch saves (RCT-E39) |
 
 ### POST /api/v1/financial-records/receipts/{id}/post
 
 No body. `200 OK` "{receipt_code} is posted as {transaction_reference}." (RCT-M16), `data`: the receipt, `POSTED`, with
-`transaction_id`, `exchange_rate` and `usd_equivalent`. A refusal changes nothing.
+`transaction_id`, `exchange_rate` and `usd_equivalent`. A refusal changes nothing. A receipt on a turned-off branch can still
+be posted, discarded and reversed (RCT-E17).
 
 Errors, in this order:
 
@@ -203,7 +215,7 @@ Errors, in this order:
 
 | Status | `code` | When |
 |---|---|---|
-| 400 | `VALIDATION_FAILED` | reason empty, `problem` `REQUIRED` (RCT-M13), or too long, `TOO_LONG` (RCT-M21); before the lookup |
+| 400 | `VALIDATION_FAILED` | reason empty, `problem` `REQUIRED` (RCT-M13), or too long, `TOO_LONG` (RCT-M21); `reason` not text, or the body not a JSON object, `INVALID` (RCT-R63); before the lookup |
 | 404 | `NOT_FOUND` | RCT-M08 |
 | 409 | `RECEIPT_NOT_REVERSIBLE` | "Only a posted receipt can be reversed." — any status but `POSTED` (RCT-M30) |
 | 409 | `TRANSACTION_ALREADY_MATCHED` | matched to a statement line (RCT-M14) |
