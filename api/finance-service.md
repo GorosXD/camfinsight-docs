@@ -7,19 +7,19 @@ size, total_elements, total_pages }`.
 | Status | Method | Path | Who | Spec |
 |---|---|---|---|---|
 | 📝 | GET | /api/v1/bank-statements/accounts (existing; entry written from the code) | Owner, Manager | [mobile-sales-management](../specs/mobile-sales-management/spec.md) MSL-R22 |
-| 🚧 | POST | /api/v1/financial-records/receipts | Owner, Manager | [receipts](../specs/receipts/spec.md) RCT-R01–R08, R41–R43, R57, R58 |
-| 🚧 | GET | /api/v1/financial-records/receipts | Owner, Manager | RCT-R30–R32, R50 |
-| 🚧 | GET | /api/v1/financial-records/receipts/summary | Owner, Manager | RCT-R33, E31, E33 |
-| 🚧 | GET | /api/v1/financial-records/receipts/{id} | Owner, Manager | RCT-R40, R46, R55 |
-| 🚧 | GET | /api/v1/financial-records/receipts/{id}/document | Owner, Manager | RCT-R35 |
-| 🚧 | PUT | /api/v1/financial-records/receipts/{id} | Owner, Manager | RCT-R09–R14, R56 |
-| 🚧 | POST | /api/v1/financial-records/receipts/{id}/post | Owner, Manager | RCT-R16–R22, R44, R45 |
-| 🚧 | POST | /api/v1/financial-records/receipts/{id}/not-duplicate | Owner, Manager | RCT-R25, R26 |
-| 🚧 | DELETE | /api/v1/financial-records/receipts/{id} | Owner, Manager | RCT-R36, R37 |
-| 🚧 | POST | /api/v1/financial-records/receipts/{id}/reverse | Owner, Manager | RCT-R38, R45, R51, R54 |
-| 🚧 | POST | /api/v1/bank-statements/transactions/{id}/reverse (existing, changed) | Owner, Manager | RCT-R47 |
-| 🚧 | PATCH | /api/v1/bank-statements/transactions/{id} (existing, changed) | Owner, Manager | RCT-R48, R53 |
-| 🚧 | POST | /api/v1/bank-statements/transactions/categorize (existing, changed) | Owner, Manager | RCT-R52, R53 |
+| ✅ | POST | /api/v1/financial-records/receipts | Owner, Manager | [receipts](../specs/receipts/spec.md) RCT-R01–R08, R41–R43, R57, R58 |
+| ✅ | GET | /api/v1/financial-records/receipts | Owner, Manager | RCT-R30–R32, R50 |
+| ✅ | GET | /api/v1/financial-records/receipts/summary | Owner, Manager | RCT-R33, E31, E33 |
+| ✅ | GET | /api/v1/financial-records/receipts/{id} | Owner, Manager | RCT-R40, R46, R55 |
+| ✅ | GET | /api/v1/financial-records/receipts/{id}/document | Owner, Manager | RCT-R35 |
+| ✅ | PUT | /api/v1/financial-records/receipts/{id} | Owner, Manager | RCT-R09–R14, R56 |
+| ✅ | POST | /api/v1/financial-records/receipts/{id}/post | Owner, Manager | RCT-R16–R22, R44, R45 |
+| ✅ | POST | /api/v1/financial-records/receipts/{id}/not-duplicate | Owner, Manager | RCT-R25, R26 |
+| ✅ | DELETE | /api/v1/financial-records/receipts/{id} | Owner, Manager | RCT-R36, R37 |
+| ✅ | POST | /api/v1/financial-records/receipts/{id}/reverse | Owner, Manager | RCT-R38, R45, R51, R54 |
+| ✅ | POST | /api/v1/bank-statements/transactions/{id}/reverse (existing, changed) | Owner, Manager | RCT-R47 |
+| ✅ | PATCH | /api/v1/bank-statements/transactions/{id} (existing, changed) | Owner, Manager | RCT-R48, R53 |
+| ✅ | POST | /api/v1/bank-statements/transactions/categorize (existing, changed) | Owner, Manager | RCT-R52, R53 |
 | ✅ | GET | /api/v1/bank-statements/transactions/{id} (existing, unchanged; the receipt duplicate panel opens a matching transaction with it) | Owner, Manager | RCT-R24 |
 
 ## Receipts

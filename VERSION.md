@@ -23,6 +23,18 @@ Every change to these docs gets an entry here, newest first. Code repos read it 
 
 ---
 
+## v5.2.0 — 2026-11-17
+**Author:** Vuththana
+
+- `api/finance-service.md`: the receipt endpoints and the transactions guard are ✅. finance-service #16 and web-ui #61 are merged into `dev-cleaned`.
+- `data-dictionary/finance.md`:
+  - added `document_sequences` (receipts spec §8, built in finance V5);
+  - added the receipt rows of `change_logs`: the actions and what `previous_value` / `new_value` hold.
+- `data-dictionary/jsonb-shapes.md`: `documents.extraction` marked 📝 until the AI team confirms the confidence scale and the shape of `issues` and `raw_lines`.
+- `data-dictionary/README.md`: the finance.md table list.
+
+**Impact:** None for code: this documents what finance-service already does. The AI team: please confirm the `documents.extraction` details.
+
 ## v5.1.0 — 2026-11-16
 **Author:** Vuththana
 
