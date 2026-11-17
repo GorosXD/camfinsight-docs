@@ -23,6 +23,20 @@ Every change to these docs gets an entry here, newest first. Code repos read it 
 
 ---
 
+## v5.0.0 — 2026-11-17
+**Author:** Vuththana
+
+- `specs/notification-mobile/spec.md`: amended and re-approved (✅ v5.0.0), answering the verify gaps NTM-Q31 … NTM-Q37 → NTM-D49 … NTM-D55.
+  - Withdrawn: NTM-R53 → R56 (token at most 2048 characters, below the unique index's size limit) and R57 (only `A–Z a–z 0–9 _ : . -`); NTM-D46 → D49; NTM-M31 → M32 ("Use at most 2048 characters.").
+  - Added: NTM-M33 ("Enter a valid value."), NTM-D50 … D55, NTM-E50 … E55 (un-kept session, one mark-all at a time, workspace failure, over-long stored tokens deleted by the migration, failed FCM deletion, invalid characters).
+  - §8: `push_tokens.token` at most 2048 and the FCM characters, by a new migration after V4 (proposed). §9: push-tokens and unregister 📝 planned.
+- `specs/notification-mobile/tasks.md`: T35 reopened; T30, T35, T43 marked ⟳; progress 40 / 45.
+
+**Impact:**
+- identity-service: new `V5` migration (delete tokens over 2048 or with other characters, replace `ck_push_tokens_token_length` with 2048, add a character check); `@Size(max = 2048)` and `@Pattern` on both push-token request DTOs; `PushTokenControllerIT` and `PushTokenRepositoryIT` move from NTM-R53 to R56 / R57. V4 stays (already applied on the shared dev DB).
+- android-ui: none.
+- plan.md: part F, §3 push-token contracts, QA scenario NTM-R53-V1 (`/sdd:plan`).
+
 ## v4.0.1 — 2026-11-16
 **Author:** Vuththana
 

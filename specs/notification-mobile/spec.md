@@ -1,6 +1,6 @@
 # Spec: Notifications on mobile (center and push)
 
-**Prefix:** `NTM` · **Status:** ⟳ Amending · **Version:** v4.0.0 · **Author:** Vuththana
+**Prefix:** `NTM` · **Status:** ✅ Approved · **Version:** v5.0.0 · **Author:** Vuththana
 **Tables:** `notifications`, `users.notification_preferences` (identity-service; not yet in the data dictionary — see §8), new `push_tokens` (§8)
 **Endpoints:** identity-service `/api/v1/notifications/**` (exist in code, not yet in `api/`) · new ones listed in §9
 **Routes (Android destinations):** `Notifications` (owner, manager) · `NotificationSettings` (owner, manager)
@@ -103,9 +103,16 @@ and adds device-token storage and an FCM sender in identity-service.
 | **NTM-D43** | Stored push | Every phone save stores `push` for all types (NTM-R22), so a later change of a default (NTM-D17) doesn't reach users who saved; there is no "reset to defaults" in this version. (User, 2026-11-16, NTM-Q24, NTM-Q28) |
 | **NTM-D44** | Null push | In `PUT /preferences`, `"push": null` is treated like a missing `push`: the stored value is kept. (User, 2026-11-16, NTM-Q25) |
 | **NTM-D45** | Blank sign-out token | A blank or whitespace-only `push_token` on `POST /auth/sign-out` is treated as none; sign-out still answers `200`. (User, 2026-11-16, NTM-Q26) |
-| **NTM-D46** | Token length | A push token is at most 4096 characters (FCM tokens are about 160); register and unregister refuse a longer one with a field error. (User, 2026-11-16, NTM-Q27) |
+| ~~**NTM-D46**~~ withdrawn in v5.0.0 — replaced by NTM-D49 (2048, FCM characters). Was: | Token length | A push token is at most 4096 characters (FCM tokens are about 160); register and unregister refuse a longer one with a field error. (User, 2026-11-16, NTM-Q27) |
 | **NTM-D47** | Home timing | A push arriving within a moment after the user leaves the app may still count as foreground and show no system notification (Android lifecycle); accepted. (User, 2026-11-16, NTM-Q29) |
 | **NTM-D48** | Large text | When the tab labels don't fit (e.g. large font size), the tab row scrolls sideways; labels are never cut. (User, 2026-11-16, NTM-Q30) |
+| **NTM-D49** | Token length | A push token is at most 2048 characters (FCM tokens are about 160), below the unique index's size limit; register and unregister refuse a longer one with a field error. The cap is changed by a new migration, because the 4096 one is already applied. (User, 2026-11-17, NTM-Q31) |
+| **NTM-D50** | Token characters | A push token may contain only `A–Z`, `a–z`, `0–9`, `_`, `:`, `.` and `-` (the FCM token alphabet), so its length in characters equals its length in bytes; anything else is refused with a field error. (User, 2026-11-17, NTM-Q37) |
+| **NTM-D51** | Session not kept | With "Keep me signed in" off, pushes reach the user only while the app's process is alive; after Android ends it, pushes are dropped (NTM-R54) until they sign in again, and the token stays registered. (User, 2026-11-17, NTM-Q32) |
+| **NTM-D52** | One mark-all at a time | While a "Mark all read" is sending, the button is disabled on every tab until it answers. (User, 2026-11-17, NTM-Q33) |
+| **NTM-D53** | Workspace failure | If the caller's workspace (`GET /auth/me`) fails to load, the center shows no branch chip and no error; pull-to-refresh retries it. (User, 2026-11-17, NTM-Q34) |
+| **NTM-D54** | Over-long stored tokens | The migration that tightens the cap also adds the character rule (NTM-D50) as a database check, and first deletes stored tokens longer than 2048 or with other characters (no real FCM token is either), so identity-service always starts; the phone registers again on its next start. (User, 2026-11-17, NTM-Q35) |
+| **NTM-D55** | Failed FCM deletion | A forced sign-out whose FCM token deletion fails or times out leaves the token alive until the next sign-in moves it (NTM-D21), FCM reports it invalid, or 60 days pass; no retry. (User, 2026-11-17, NTM-Q36) |
 
 ## 4. Journeys
 
@@ -187,7 +194,7 @@ sequenceDiagram
     A->>F: delete token
 ```
 
-Realises NTM-R25 … NTM-R29, NTM-R41, NTM-R48 … NTM-R50, NTM-R53.
+Realises NTM-R25 … NTM-R29, NTM-R41, NTM-R48 … NTM-R50, NTM-R56, NTM-R57.
 
 ### 4e. Receive and open a push
 
@@ -280,9 +287,11 @@ Realises NTM-R30, NTM-R32 … NTM-R37, NTM-R40, NTM-R51, NTM-R54.
 - **NTM-R50** · Owner, Manager · §4d — When the session refresh fails and the app returns to sign-in, it deletes the phone's FCM token, as on sign-out (NTM-D36).
 - **NTM-R51** · Server · §4e — The push is an FCM data message with exactly `notification_id`, `alert_type` and `branch_name` (left out for a business-wide notification); no `title`, `body`, amounts, names or `message` (NTM-D07, NTM-D42); the app shows the alert type's title (NTM-M10 … NTM-M22) as its title and the branch name or "All branches" as its text; each notification is its own push, never collapsed (NTM-D24).
 - **NTM-R52** · Server · §4c — In `PUT /notifications/preferences`, a type's `"push": null` keeps its stored value, like a missing `push` (NTM-D44).
-- **NTM-R53** · Server · §4d — `POST /notifications/push-tokens` and `POST /notifications/push-tokens/unregister` refuse a `token` longer than 4096 characters with `400` and the field message NTM-M31 (NTM-D46).
+- ~~**NTM-R53**~~ withdrawn in v5.0.0 — replaced by NTM-R56 and NTM-R57 (2048 characters, FCM characters only). Was: · Server · §4d — `POST /notifications/push-tokens` and `POST /notifications/push-tokens/unregister` refuse a `token` longer than 4096 characters with `400` and the field message NTM-M31 (NTM-D46).
 - **NTM-R54** · Owner, Manager · §4e — A push that arrives while no one is signed in on the phone shows no system notification (NTM-D41).
 - **NTM-R55** · Owner, Manager · §4a — When the tab labels don't fit the width (e.g. large font size), the tab row scrolls sideways and no label is cut (NTM-D48).
+- **NTM-R56** · Server · §4d — `POST /notifications/push-tokens` and `POST /notifications/push-tokens/unregister` refuse a `token` longer than 2048 characters with `400` and the field message NTM-M32; nothing is stored or deleted (NTM-D49).
+- **NTM-R57** · Server · §4d — The same endpoints refuse a `token` with any character other than `A–Z`, `a–z`, `0–9`, `_`, `:`, `.` and `-` with `400` and the field message NTM-M33; nothing is stored or deleted (NTM-D50).
 
 ### Fields
 
@@ -332,7 +341,9 @@ Realises NTM-R30, NTM-R32 … NTM-R37, NTM-R40, NTM-R51, NTM-R54.
 | **NTM-M28** | server error | The server's `message` for any other error, shown as is with Retry | NTM-R38 |
 | **NTM-M29** | — | "Telegram isn't linked. Connect it in Settings → Telegram alerts." (opens that screen) | NTM-R46 |
 | **NTM-M30** | `400 · VALIDATION_FAILED` field error | The server's field message for the refused type, e.g. "Turn on in-app alerts to get them on Telegram." | NTM-R45 |
-| **NTM-M31** | `400 · VALIDATION_FAILED` field `token` | "Use at most 4096 characters." (the existing `validation.max_length`) | NTM-R53 |
+| ~~**NTM-M31**~~ withdrawn in v5.0.0 — replaced by NTM-M32. Was: | `400 · VALIDATION_FAILED` field `token` | "Use at most 4096 characters." (the existing `validation.max_length`) | NTM-R53 |
+| **NTM-M32** | `400 · VALIDATION_FAILED` field `token` | "Use at most 2048 characters." (the existing `validation.max_length`) | NTM-R56 |
+| **NTM-M33** | `400 · VALIDATION_FAILED` field `token` | "Enter a valid value." (the existing invalid-value message) | NTM-R57 |
 
 ## 7. Edge cases
 
@@ -385,6 +396,12 @@ Realises NTM-R30, NTM-R32 … NTM-R37, NTM-R40, NTM-R51, NTM-R54.
 - **NTM-E47** · Session — A `POST /auth/sign-out` carrying an invalid or expired bearer → `401` before the endpoint; the app never sends one (NTM-R49, NTM-D35).
 - **NTM-E48** · Session — `push_token` on sign-out is blank or only spaces → treated as none; `200`, nothing deleted (NTM-D45).
 - **NTM-E49** · Push — A push arrives a moment after the user pressed Home → it may count as foreground and show no system notification; the bell and center show it on the next reload (NTM-D47).
+- **NTM-E50** · Session — "Keep me signed in" is off and Android ends the app in the background → later pushes show nothing until the user opens the app and signs in again; the token stays registered (NTM-D51, NTM-R54).
+- **NTM-E51** · Actions — "Mark all read" is sending and the user switches tab → the button is disabled there too until the first one answers (NTM-D52, NTM-E14).
+- **NTM-E52** · Connectivity — The caller's workspace (`GET /auth/me`) fails to load → no branch chip and no error; an owner looks like a manager until pull-to-refresh succeeds (NTM-D53).
+- **NTM-E53** · Data — A stored token longer than 2048 characters, or with characters outside NTM-D50, when the cap migration runs → it is deleted before the checks are added; identity-service starts (NTM-D54).
+- **NTM-E54** · Push — A forced sign-out can't delete the FCM token (offline, 5 s timeout) → the token stays alive; pushes for the previous user are dropped while no one is signed in (NTM-R54) until the next sign-in moves the token (NTM-D55).
+- **NTM-E55** · Data — A `token` with a space, a non-ASCII or any other character outside NTM-D50 → `400` with NTM-M33 on `token`, nothing stored or deleted (NTM-R57); a token that is both too long and has such characters gets one of NTM-M32 or NTM-M33, whichever the server reports first.
 
 ## 8. Data dictionary changes
 
@@ -392,7 +409,7 @@ Realises NTM-R30, NTM-R32 … NTM-R37, NTM-R40, NTM-R51, NTM-R54.
 |---|---|---|---|
 | `notifications` (all columns) | Add the table to `data-dictionary/` as it is in identity-service V1 (owned by NTF) | Fields cited in §5 | proposed |
 | `users.notification_preferences` | jsonb shape (`jsonb-shapes.md#usersnotification_preferences`, `{"version":1,"alerts":{TYPE:{in_app,telegram}}}`) gains `push` (boolean) per alert type; `version` stays 1 and a missing `push` reads as the type's Telegram default (NTM-D17); a PUT without `push` keeps the stored values (NTM-D28) | NTM-R20, NTM-R22, NTM-R30 | proposed |
-| `push_tokens` | New identity-service table: `push_token_id` (uuid, PK), `user_id` (FK `users`, not null), `token` (text, not null, unique, at most 4096 characters — a re-registration moves it, NTM-D21, NTM-D46), `platform` (`ANDROID`), `created_at`, `last_seen_at` (deleted after 60 days, NTM-D23) | NTM-R25, NTM-R28, NTM-R29, NTM-R32, NTM-R33, NTM-R41, NTM-R53 | proposed (v4.0.0: length 4096) |
+| `push_tokens` | New identity-service table: `push_token_id` (uuid, PK), `user_id` (FK `users`, not null), `token` (text, not null, unique, at most 2048 characters of `A–Z a–z 0–9 _ : . -` — a re-registration moves it, NTM-D21, NTM-D49, NTM-D50), `platform` (`ANDROID`), `created_at`, `last_seen_at` (deleted after 60 days, NTM-D23) | NTM-R25, NTM-R28, NTM-R29, NTM-R32, NTM-R33, NTM-R41, NTM-R56, NTM-R57 | proposed (v5.0.0: length 2048 and the FCM characters, by a new migration after V4, which also adds the character rule as a database check) |
 
 ## 9. Endpoints
 
@@ -405,8 +422,8 @@ Realises NTM-R30, NTM-R32 … NTM-R37, NTM-R40, NTM-R51, NTM-R54.
 | `POST /api/v1/notifications/read-all` | identity-service | Owner, Manager | NTM-R15 | 📝 exists in code, not yet listed |
 | `GET /api/v1/notifications/preferences` | identity-service — **changed** (adds `push`) | Owner, Manager | NTM-R19, NTM-R20, NTM-R46 | 📝 planned |
 | `PUT /api/v1/notifications/preferences` | identity-service — **changed** (`AlertChannelsRequest` gains optional `push`, same strict-boolean rule, kept when absent; `AlertChannelsResponse` gains `push`) | Owner, Manager | NTM-R22, NTM-R42, NTM-R52 | 📝 planned (v4.0.0: `"push": null` = absent) |
-| `POST /api/v1/notifications/push-tokens` | identity-service — **new** | Owner, Manager | NTM-R25, NTM-R27, NTM-R29, NTM-R41, NTM-R53 | 📝 planned (v4.0.0: `token` at most 4096) |
-| `POST /api/v1/notifications/push-tokens/unregister` | identity-service — **new** | Owner, Manager | NTM-R25, NTM-R53 | 📝 planned (v4.0.0: `token` at most 4096) |
+| `POST /api/v1/notifications/push-tokens` | identity-service — **new** | Owner, Manager | NTM-R25, NTM-R27, NTM-R29, NTM-R41, NTM-R56, NTM-R57 | 📝 planned (v5.0.0: `token` at most 2048, FCM characters only) |
+| `POST /api/v1/notifications/push-tokens/unregister` | identity-service — **new** | Owner, Manager | NTM-R25, NTM-R56, NTM-R57 | 📝 planned (v5.0.0: `token` at most 2048, FCM characters only) |
 | `POST /api/v1/auth/sign-out` | identity-service — **changed** (optional `push_token`) | Owner, Manager | NTM-R28, NTM-R48, NTM-R49 | 📝 planned (v4.0.0: sent without a bearer; blank `push_token` = none; replayed logout deletes) |
 | `GET /api/v1/branches` | identity-service (`status` defaults to active) | Owner | NTM-R04 | 📝 exists in code (as in `mobile-sales-management` §9, MSL-R06) |
 
@@ -446,9 +463,10 @@ Push sending runs inside identity-service where alerts are fanned out (`AlertEve
 - **NTM-Q28** · §3 — A first save stores a full matrix and there is no way back to "nothing stored". *Options:* (a) accept, as NTM-Q24; (b) a "reset to defaults" later. *Suggested:* (a). → NTM-D43 (answered 2026-11-16 by Vuththana)
 - **NTM-Q29** · §4e — A push arriving 1–2 s after Home showed no system notification (android QA): the app still counted as foreground. *Options:* (a) accept and note it; (b) treat Home as background at once; (c) leave it unspecified. *Suggested:* (a). → NTM-D47 (answered 2026-11-16 by Vuththana)
 - **NTM-Q30** · §4a — At font scale 1.5 the "Stock" tab is clipped (android QA). *Options:* (a) the tab row scrolls sideways; (b) tabs shrink or wrap; (c) accept. *Suggested:* (a). → NTM-D48 (answered 2026-11-16 by Vuththana)
-- **NTM-Q31** · §8 — `push_tokens.token` has a unique btree index, whose entries can't exceed about 2.7 KB, so a random-looking token of about 2,700–4,096 characters likely fails with a database error (`500`) instead of NTM-R53's `400` (verify, dictionary-checker). Real FCM tokens are about 160 characters. *Options:* (a) lower the cap to 2048 characters (`@Size` and the CHECK), withdraw NTM-R53 / NTM-D46 and restate them; (b) keep 4096 and accept a `500` above the index limit; (c) keep 4096 and index a hash of the token instead (schema change). *Suggested:* (a).
-- **NTM-Q32** · §7 — With "Keep me signed in" off the session lives only in memory; after Android ends the app process, a push finds no one signed in and is dropped (NTM-R54), while the token stays registered. Plan Q1 accepted this, but the spec doesn't say it. *Options:* (a) state it as an edge case; (b) count a phone as signed in for push while it holds a registered token (change NTM-R54 / NTM-D41). *Suggested:* (a), as plan Q1.
-- **NTM-Q33** · §7 — While a "Mark all read" is sending, the button is disabled on every tab, not only the one tapped (NTM-E14, NTM-E44). *Options:* (a) state it: one mark-all at a time, disabled everywhere until it answers; (b) allow a mark-all on another tab meanwhile. *Suggested:* (a).
-- **NTM-Q34** · §7 — If loading the caller's workspace (`GET /auth/me`) fails, the center can't tell an owner from a manager: an owner sees no branch chip (as a manager would) and no error until pull-to-refresh retries it (NTM-E46 covers only `GET /branches`). *Options:* (a) state it: no chip, no error, refresh retries; (b) show NTM-M03 with Retry above the list; (c) show "All branches" as a disabled chip. *Suggested:* (a).
-- **NTM-Q35** · §8 — The migration that adds the length CHECK fails, and identity-service doesn't start, if a stored token is already longer than the cap (V3 had no cap). *Options:* (a) the migration first deletes such rows (no real FCM token is that long; the phone re-registers on its next start); (b) accept the failure. *Suggested:* (a).
-- **NTM-Q36** · §7 — A forced sign-out (NTM-R50) whose FCM token deletion fails or times out (offline, 5 s) leaves the token alive: pushes for the previous user still reach the phone (dropped while no one is signed in, NTM-R54) until the next sign-in moves the token (NTM-D21), FCM reports it invalid, or 60 days pass. *Options:* (a) state it; (b) retry the deletion on the next app start. *Suggested:* (a).
+- **NTM-Q31** · §8 — `push_tokens.token` has a unique btree index, whose entries can't exceed about 2.7 KB, so a random-looking token of about 2,700–4,096 characters likely fails with a database error (`500`) instead of NTM-R53's `400` (verify, dictionary-checker). Real FCM tokens are about 160 characters. *Options:* (a) lower the cap to 2048 characters (`@Size` and the CHECK), withdraw NTM-R53 / NTM-D46 and restate them; (b) keep 4096 and accept a `500` above the index limit; (c) keep 4096 and index a hash of the token instead (schema change). *Suggested:* (a). → NTM-D49 (answered 2026-11-17 by Vuththana)
+- **NTM-Q32** · §7 — With "Keep me signed in" off the session lives only in memory; after Android ends the app process, a push finds no one signed in and is dropped (NTM-R54), while the token stays registered. Plan Q1 accepted this, but the spec doesn't say it. *Options:* (a) state it as an edge case; (b) count a phone as signed in for push while it holds a registered token (change NTM-R54 / NTM-D41). *Suggested:* (a), as plan Q1. → NTM-D51 (answered 2026-11-17 by Vuththana)
+- **NTM-Q33** · §7 — While a "Mark all read" is sending, the button is disabled on every tab, not only the one tapped (NTM-E14, NTM-E44). *Options:* (a) state it: one mark-all at a time, disabled everywhere until it answers; (b) allow a mark-all on another tab meanwhile. *Suggested:* (a). → NTM-D52 (answered 2026-11-17 by Vuththana)
+- **NTM-Q34** · §7 — If loading the caller's workspace (`GET /auth/me`) fails, the center can't tell an owner from a manager: an owner sees no branch chip (as a manager would) and no error until pull-to-refresh retries it (NTM-E46 covers only `GET /branches`). *Options:* (a) state it: no chip, no error, refresh retries; (b) show NTM-M03 with Retry above the list; (c) show "All branches" as a disabled chip. *Suggested:* (a). → NTM-D53 (answered 2026-11-17 by Vuththana)
+- **NTM-Q35** · §8 — The migration that adds the length CHECK fails, and identity-service doesn't start, if a stored token is already longer than the cap (V3 had no cap). *Options:* (a) the migration first deletes such rows (no real FCM token is that long; the phone re-registers on its next start); (b) accept the failure. *Suggested:* (a). → NTM-D54 (answered 2026-11-17 by Vuththana)
+- **NTM-Q36** · §7 — A forced sign-out (NTM-R50) whose FCM token deletion fails or times out (offline, 5 s) leaves the token alive: pushes for the previous user still reach the phone (dropped while no one is signed in, NTM-R54) until the next sign-in moves the token (NTM-D21), FCM reports it invalid, or 60 days pass. *Options:* (a) state it; (b) retry the deletion on the next app start. *Suggested:* (a). → NTM-D55 (answered 2026-11-17 by Vuththana)
+- **NTM-Q37** · §8 — The cap counts characters, but the index limit is in bytes, and the DTO and the database count non-ASCII characters differently. *Options:* (a) only the FCM token characters `[A-Za-z0-9_:.-]`, so characters equal bytes; (b) cap the bytes instead; (c) leave it. *Suggested:* (a). → NTM-D50 (answered 2026-11-17 by Vuththana)
