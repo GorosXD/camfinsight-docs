@@ -23,6 +23,13 @@ Every change to these docs gets an entry here, newest first. Code repos read it 
 
 ---
 
+## v6.1.1 — 2026-11-17
+**Author:** Vuththana
+
+- `specs/notification-mobile/plan.md`: Plan: notification-mobile changed for spec v6.1.0 (approved by Vuththana): NTM-D57 / NTM-E57 cited in the push-token contracts; one `PushTokenControllerIT` test and api-qa NTM-E57-V1; no production code.
+
+**Impact:** None (plan only).
+
 ## v6.1.0 — 2026-11-17
 **Author:** Vuththana
 

@@ -1,13 +1,13 @@
 # Plan: Notifications on mobile (center and push)
 
-**Spec:** `NTM` v6.0.0, commit `f4c8dc8` · **Approved:** 2026-11-17 by Vuththana
+**Spec:** `NTM` v6.1.0, commit `65f523e` · **Approved:** 2026-11-17 by Vuththana
 **Repos:** ledgervision-identity-service (backend, api-dev; worktree `ledgervision-identity-service-ntm`, branch `feature/notification-mobile`: parts A–B merged into `dev` by PR #42; part F v4.0.0 committed as T34–T37, not pushed), ledgervision-android-ui (Android, android-dev; branch `feature/notification-mobile`: parts C–E merged into `dev` by PR #4; part G committed as T38–T42, not pushed), ledgervision-web-ui (checked only, no change), camfinsight-docs (lead: `api/`, data dictionary, spec §8 / §9 states)
 
 ## 1. Scope (changed)
 
 - **In:**
   - Spec §1 "In", and journeys §4a–§4e.
-  - NTM-R01 … NTM-R57 and NTM-E01 … NTM-E56, except the withdrawn ones: NTM-R21 (with NTM-D05 and NTM-M06), NTM-R31, NTM-R43, NTM-R53 (with NTM-D46 and NTM-M31), NTM-E28, NTM-E38.
+  - NTM-R01 … NTM-R57 and NTM-E01 … NTM-E57, except the withdrawn ones: NTM-R21 (with NTM-D05 and NTM-M06), NTM-R31, NTM-R43, NTM-R53 (with NTM-D46 and NTM-M31), NTM-E28, NTM-E38, NTM-E55.
   - The §8 data changes:
     - `users.notification_preferences.push`;
     - the new `push_tokens`;
@@ -16,7 +16,7 @@
   - The Firebase setup (NTM-D16, NTM-D29): a debug app id `com.kshrd.starter.dev`, and builds and tests that work without the Firebase files.
   - Device checks of push without real FCM, through a debug-only simulator (§9).
   - **v5.0.0 work:** everything in parts A–E and in v4.0.0 parts F–G stays. This change:
-    - adds the token rules (NTM-R56, NTM-R57, NTM-E53, NTM-E56) to part F;
+    - adds the token rules (NTM-R56, NTM-R57, NTM-E53, NTM-E56) to part F, and (v6.1.0) a test for the cleaning that already runs before them (NTM-E57, NTM-D57);
     - adds tests only to part G: NTM-E50, NTM-E51, NTM-E52 and NTM-E54 describe Android behaviour that already exists;
     - adds the 2048 and character edits to part H.
   - The per-ID table in §2 says, for each v5 ID, whether it needs code or only a test or QA scenario.
@@ -57,6 +57,7 @@
 | NTM-R57, NTM-M33, NTM-D50 | **Not built.** There is no character rule. `validation.invalid_value` = "Enter a valid value." already exists in `messages.properties` | **New code**, identity: `@Pattern` on both DTOs and the `V5` character check. New NTM-R57 tests |
 | NTM-E53, NTM-D54 | **Not built** | **New code**, identity: the `DELETE` at the top of `V5`. New `PushTokenCapMigrationIT`, modelled on `OneManagerMigrationIT` |
 | NTM-E56 | **Not built** (it follows from NTM-R57). `GlobalExceptionHandler.handleValidation` keeps the first field error it reads (`putIfAbsent`), and Hibernate Validator's order isn't fixed, so the combined case gets either message, as the spec allows | Identity: no code beyond NTM-R57. Add one test that accepts either message |
+| NTM-E57, NTM-D57 (v6.1.0) | **Built.** `common/json/CleanTextDeserializer`, registered for every `String` by `JacksonConfig`, removes U+00A0, U+200B–200D, U+2060 and U+FEFF anywhere in `token` and `strip()`s both ends (spaces, tabs, newlines) before `@Valid` runs. Only password fields are left as typed. A space, tab or newline inside survives and fails `@Pattern` (T47, 887ce2b) | Identity **test only**: `PushTokenControllerIT` (§7). QA NTM-E57-V1 |
 | NTM-E50, NTM-D51 | **Built.**<br>- `PreferencesSessionStore` restores no user when `remember` is false.<br>- `PushMessageHandler` drops a push while `currentUser` is null (T39, test "NTM-R54 NTM-D41 …").<br>- `PushTokenSync` sends nothing and deletes nothing while no one is signed in, so `registered_token` and the server row stay | Android **test only**: `PushTokenSyncTest` (§7). QA NTM-E50-M1 |
 | NTM-E51, NTM-D52 | **Built.** `isMarkAllEnabled` is `!isMarkingAll && …`, and `isMarkingAll` belongs to the screen, not the tab, so it stays true across a tab or branch switch until the answer | Android **test only**: `NotificationsViewModelTest` (§7). QA NTM-E51-C1 |
 | NTM-E52, NTM-D53 | **Built** (T41). A failed `GET /auth/me` leaves `isOwner` false (no chip, no `branch_id`) and `workspaceLoaded` false, with no effect. `Refresh` calls `loadWorkspace(forceRefresh = true)` while `!workspaceLoaded`. The existing test "NTM-E46 pull-to-refresh fetches the workspace again when it never loaded …" already exercises it, but names NTM-E46 | Android **test only**: a new test naming NTM-E52 that also asserts no error and no `branch_id` (§7). QA NTM-E52-M1 |
@@ -141,28 +142,29 @@ All endpoints go through the gateway: `/api/v1/notifications/**` and `/api/v1/au
   - Otherwise, the envelope `message` shows (NTM-M28).
   - A connection failure shows NTM-M03.
 
-### `POST /api/v1/notifications/push-tokens`: new (changed) · NTM-R25, NTM-R27, NTM-R29, NTM-R41, NTM-R56, NTM-R57, NTM-D21, NTM-D23, NTM-D49, NTM-D50, NTM-E56
+### `POST /api/v1/notifications/push-tokens`: new (changed) · NTM-R25, NTM-R27, NTM-R29, NTM-R41, NTM-R56, NTM-R57, NTM-D21, NTM-D23, NTM-D49, NTM-D50, NTM-D56, NTM-D57, NTM-E56, NTM-E57
 - **Who:** Owner, Manager (signed in).
 - **Body:**
   - `token` (dictionary `push_tokens.token`):
+    - first cleaned like every JSON string (NTM-D57): NBSP, U+200B–200D, U+2060 and BOM are removed anywhere, and whitespace is trimmed at both ends. Every check below applies to the cleaned value, and the cleaned value is what is stored (`"abc "` → `abc`, `a<zero-width>b` → `ab`, NTM-E57);
     - required and not blank;
     - **at most 2048 characters** (NTM-R56);
     - **only `A–Z`, `a–z`, `0–9`, `_`, `:`, `.` and `-`** (NTM-R57).
   - `platform` (`push_tokens.platform`): required, `ANDROID`.
 - **200 OK** `data`: `null`. The server upserts on `token`: a token held by another user moves to the caller, and `last_seen_at` is set to now on every call.
 - **Errors:** `401`, and `400 VALIDATION_FAILED`. Nothing is stored in any of these cases:
-  - `token` missing, `null` or empty → `data.token` "This field is required.". A whitespace-only `token` gets the answer chosen in §10 Q2.
+  - `token` missing, `null`, or empty after cleaning (spaces, tabs, newlines or invisible characters only) → `data.token` "This field is required.". Length and characters are checked only after that (NTM-D56, NTM-E56).
   - `token` over 2048 characters → `data.token` "Use at most 2048 characters." (NTM-M32).
-  - `token` with any other character (a space, a non-ASCII letter, `/`, `+`, `=` …) → `data.token` "Enter a valid value." (NTM-M33).
+  - `token` with any other character left after cleaning (a space, tab or newline inside, a non-ASCII letter, another invisible character, `/`, `+`, `=` …) → `data.token` "Enter a valid value." (NTM-M33, NTM-E57).
   - `token` both over 2048 and with another character → `data.token` is one of NTM-M32 or NTM-M33, whichever the validator reports first (NTM-E56).
   - `platform` missing or not `ANDROID` → `data.platform`.
 - The database refuses both too (`ck_push_tokens_token_length`, `ck_push_tokens_token_chars`, §5). A token that passes the DTO always fits the unique index, so it never fails with `500`.
 - The app never shows these errors (NTM-R27).
 
-### `POST /api/v1/notifications/push-tokens/unregister`: new (changed) · NTM-R25, NTM-R56, NTM-R57, NTM-E56
-- **Body:** `token`, with the same rules as for register: required, not blank, at most 2048 characters, the same characters only.
+### `POST /api/v1/notifications/push-tokens/unregister`: new (changed) · NTM-R25, NTM-R56, NTM-R57, NTM-D56, NTM-D57, NTM-E56, NTM-E57
+- **Body:** `token`, cleaned and checked as for register (NTM-D57): required, not blank, at most 2048 characters, the same characters only. The cleaned value is what is matched, so `" abc "` unregisters `abc`.
 - **200 OK** `data`: `null`. Only the caller's own row is deleted; a token that isn't the caller's, or doesn't exist, is ignored (still `200`).
-- **Errors:** `401`, and `400 VALIDATION_FAILED` on `data.token`, with the same messages and rules as register (NTM-M32, NTM-M33, NTM-E56, §10 Q2). Nothing is deleted. Silent in the app.
+- **Errors:** `401`, and `400 VALIDATION_FAILED` on `data.token`, with the same messages and rules as register (NTM-M32, NTM-M33, NTM-D56, NTM-E56, NTM-E57). Nothing is deleted. Silent in the app.
 
 ### `POST /api/v1/auth/sign-out`: changed (optional `push_token`) · NTM-R28, NTM-R48, NTM-R49, NTM-D22, NTM-D33, NTM-D34, NTM-D35, NTM-D45, NTM-E20, NTM-E42, NTM-E47, NTM-E48
 - **Who:** public. It needs only the refresh token, so it works with an expired access token.
@@ -278,6 +280,7 @@ Rows marked **v5** are the new work. The other rows are shipped (parts A–E) or
 | identity | change `build.gradle`, `.env.example`, `consul/identity-service.yml`, `k8s/40-identity-service.yaml`, `k8s/DEPLOY.md`, `README.md`, `src/test/resources/application-it.yml` (shipped) | Admin SDK; `FCM_SERVICE_ACCOUNT_BASE64` (empty = push off); `ledgervision.push.fcm-service-account`; job cron; optional secret `camfinsight-fcm` (NTM-D16, NTM-R41). No v5 change |
 | identity | v4 tests (committed, T34–T37) | `KeycloakTokenClientTest`, `AuthControllerIT` (NTM-R48, NTM-E42, NTM-E47, NTM-E48), `NotificationPreferencesIT` (NTM-R52), `FcmPushSenderTest`, `PushDeliveryTest`, `PushDeliveryIT` (NTM-R51), `PushConfigTest` (NTM-D16, NTM-R34). `PushTextTest` was deleted |
 | identity | **v5** tests, each name starting with the ID | **`PushTokenControllerIT`:**<br>- Replace the two NTM-R53 tests with:<br>  - "NTM-R56 NTM-M32 a 2048-character token is saved; 2049 is 400 on token with \"Use at most 2048 characters.\" and nothing is stored";<br>  - "NTM-R56 NTM-M32 unregister with a 2049-character token is 400 on token and deletes nothing; 2048 is 200".<br>- Add "NTM-R57 NTM-M33 a token of every allowed character (`A–Z a–z 0–9 _ : . -`) is saved; one with a space, `é`, `/`, `+`, `=` or `;` is 400 on token with \"Enter a valid value.\" and nothing is stored".<br>- Add the same for unregister, where nothing is deleted.<br>- Add "NTM-E56 a 2049-character token with a space is 400 on token with \"Use at most 2048 characters.\" or \"Enter a valid value.\", and nothing is stored".<br>- The two NTM-R25 blank-token tests keep `""`, `null` and missing as "This field is required.". Their whitespace-only bodies (`"   "`, `"  "`) assert what §10 Q2 decides.<br>**`PushTokenRepositoryIT`:**<br>- Replace "NTM-R53 the database refuses a token over 4096 characters" with "NTM-R56 the database stores a random 2048-character token of the allowed characters and refuses 2049 (`ck_push_tokens_token_length`)". Draw the characters at random from the 66 allowed, so the value doesn't compress and the unique index takes its real size.<br>- Add "NTM-R57 the database refuses a token with a space or a non-ASCII character (`ck_push_tokens_token_chars`)".<br>**New `support/PushTokenCapMigrationIT`** (like `OneManagerMigrationIT`: a throwaway schema `v5_check`, Flyway `target("4")`, then `target("5")`):<br>"NTM-E53 NTM-D54 V5 deletes stored tokens over 2048 characters or with other characters, keeps the rest, and adds both checks". V4 rows:<br>- a 160-character valid token;<br>- a 2048-character valid token;<br>- 2049 × `a`;<br>- `has space`;<br>- `café`.<br>After V5:<br>- only the first two remain;<br>- `pg_constraint` has `ck_push_tokens_token_length` (2048) and `ck_push_tokens_token_chars`;<br>- the V5 history row is successful.<br>**Check:** `grep -rn -e NTM-R53 -e NTM-M31 src/test src/main/java` prints nothing. Only the V4 SQL comment keeps NTM-R53 |
+| identity | **v6.1** test in `PushTokenControllerIT` (no production change) | "NTM-E57 NTM-D57 a token is cleaned before it is checked: `"abc "` and `"\u00A0abc\uFEFF"` are saved as `abc`, `"a\u200Bb"` as `ab`; `"a b"`, `"a\tb"` and `"a\nb"` are 400 on token with "Enter a valid value." and nothing is stored; unregister with `" abc "` deletes the row `abc`" |
 | android | change `app/build.gradle.kts`, `e2e/android/*`, `gradle/libs.versions.toml`, root `build.gradle.kts`, `core/build.gradle.kts`, `.gitignore`, `local.properties.example`, `README.md` (shipped) | Debug app id `.dev`, Firebase wiring only when `google-services.json` exists, `PUSH_FAKE_TOKEN` (NTM-R47, NTM-D16, NTM-D29) |
 | android | change `core/.../navigation/AppDestinations.kt`, `core/.../data/entity/DataState.kt`, `core/.../network/RemoteDataSource.kt` (shipped) | Destinations; field errors (NTM-R03, NTM-R19, NTM-R35, NTM-R45) |
 | android | change `core/.../network/AuthInterceptors.kt` (shipped in d2b8509) | `/auth/sign-out` in `publicPaths`: no bearer, no refresh (NTM-R49, NTM-E47) |
@@ -356,6 +359,7 @@ Rows marked **v5** are the new work. The other rows are shipped (parts A–E) or
 | NTM-E53 | identity `V5__push_tokens_token_format.sql`: the `DELETE` runs before both checks, in one transaction, so identity-service starts (`PushTokenCapMigrationIT`, QA NTM-E53-C1) |
 | NTM-E54 | android `PushTokenSync.forgetPhoneToken`: a failed or timed-out deletion still clears `registered_token`, makes no call and doesn't retry. `PushMessageHandler` drops pushes while signed out. The next sign-in registers the same token, which identity moves (NTM-D21). Existing code: `PushTokenSyncTest` NTM-E54, QA NTM-E54-M1; real FCM in T33's list |
 | NTM-E56 | identity DTO `@Size` + `@Pattern` and `GlobalExceptionHandler` (first error per field wins): either NTM-M32 or NTM-M33 on `token` (`PushTokenControllerIT` NTM-E56, QA NTM-E56-V1) |
+| NTM-E57 | identity `common/json/CleanTextDeserializer` (every JSON string, before `@Valid`) removes invisible characters anywhere and trims the ends; then the DTO `@Pattern` refuses a space, tab or newline left inside with NTM-M33 (`PushTokenControllerIT` NTM-E57, QA NTM-E57-V1) |
 
 ## 9. Packages and verification (changed)
 
@@ -377,6 +381,7 @@ Rows marked **v5** are the new work. The other rows are shipped (parts A–E) or
     - **Token characters:** `abc def`, `café` and `a/b` → `400`, `data.token` "Enter a valid value."; `aZ0_:.-` → `200` (NTM-R57).
     - **Unregister:** the same, and nothing is deleted.
     - **Both:** 2049 characters with a space → `400` with either message (NTM-E56).
+    - **Cleaning:** `"abc "` → `200`, stored as `abc`; `"a​b"` → stored as `ab`; `"a\tb"` → `400` "Enter a valid value." (NTM-E57).
     - **Migration:** `\d identity.push_tokens` lists `ck_push_tokens_token_length` (2048) and `ck_push_tokens_token_chars` (NTM-E53).
   - `grep -rn -e NTM-R53 -e NTM-M31 src/test src/main/java` prints nothing.
   - The `api/identity-service.md` entries match the code (dictionary-checker clean against V5).
@@ -421,7 +426,11 @@ Rows marked **v5** are the new work. The other rows are shipped (parts A–E) or
   - **NTM-E53-C1:**
     - On a scratch Postgres migrated to V4, insert a 2049-character token and `has space` for a test user, then start identity-service. It starts, both rows are gone, and the valid rows stay.
     - On the shared dev DB after deployment, `select count(*) from identity.push_tokens where char_length(token) > 2048 or token !~ '^[A-Za-z0-9_:.-]*$'` is `0`, and both checks exist.
-  - **Whitespace-only token** on register and unregister → `400` on `token`, with the message §10 Q2 decides.
+  - **Whitespace-only token** on register and unregister (spaces, a tab, a newline, or only NBSP / zero-width characters) → `400` on `token` with "This field is required." (NTM-E56, NTM-D56).
+  - **NTM-E57-V1:**
+    - Register `"abc "`, `" abc﻿"` and `"a​b"` → `200`, and the stored rows are `abc` and `ab`.
+    - `"a b"`, `"a\tb"` and `"a\nb"` → `400` with NTM-M33 on `token`, nothing stored.
+    - Unregister `" abc "` → `200`, and the row `abc` is deleted.
 - **android-qa** (`.dev` build, `push.fakeToken=true`, T27 simulator):
   - **NTM-E50-M1:**
     - Sign in with "Keep me signed in" off, so the token is registered (`select user_id from identity.push_tokens`). Press Home, then `adb shell am kill com.kshrd.starter.dev`.
@@ -469,3 +478,4 @@ Rows marked **v5** are the new work. The other rows are shipped (parts A–E) or
 | 2026-11-16 | §1, §2, §3, §4, §7, §8, §9, §10 changed for spec v3.0.0: NTM-D29 … NTM-D33, NTM-R43 (changed), NTM-R44 … NTM-R47, NTM-E38 … NTM-E41, NTM-M09 code, NTM-M29, NTM-M30; NTM-R21, NTM-D05, NTM-M06 withdrawn | Plan §10 Q1 … Q7 answered through /sdd:amend (v3.0.0, be5af46) | Vuththana |
 | 2026-11-16 | §1–§10 changed for spec v4.0.0: NTM-R43 → R48, NTM-E38 → E42, NTM-E28 → E43, NTM-R31 → R51 withdrawn and replaced; NTM-R49, R50, R52, R53 (+ NTM-M31), R54, R55 and NTM-E44 … E49 added; NTM-R06, E31, E18, E37, R28, D07 reworded. Sign-out and FCM data contracts rewritten; new parts F (identity), G (android), H (docs); `push_tokens.token` ≤ 4096 with a CHECK migration; plan §10 Q1 on NTM-R54 | /sdd:amend v4.0.0 (565f87e), answering verify and QA gaps NTM-Q15 … NTM-Q30 | Vuththana |
 | 2026-11-17 | §1–§10 changed for spec v5.0.0: NTM-R53 → R56 / R57 (+ NTM-M32, M33; NTM-D46 → D49, D50). Part F gains a `V5` migration (delete bad rows, cap 2048, character check; V4 untouched), `@Size(2048)` + `@Pattern` on both push-token DTOs, tests moved to R56 / R57, and `PushTokenCapMigrationIT` (NTM-E53); NTM-E56 by test. NTM-E50, E51, E52, E54 are already built: part G adds tests only. Part H moves `api/` and the dictionary to 2048 and the characters. QA NTM-R53-V1 replaced by NTM-R56-V1, R57-V1, E55-V1, E53-C1, plus android NTM-E50-M1, E51-C1, E52-M1, E54-M1. Plan §10 Q2 (whitespace-only token) | /sdd:amend v5.0.0 (8dd6fad) answering verify gaps NTM-Q31 … NTM-Q37, and v6.0.0 (f4c8dc8) answering plan Q2 (NTM-E55 → E56, NTM-D56) | Vuththana |
+| 2026-11-17 | Header, §1, §2, §3, §7, §8, §9 changed for spec v6.1.0. NTM-D57 and NTM-E57 added: a push token is cleaned like every JSON string before the NTM-R56 / NTM-R57 checks. NTM-D56 and NTM-E56 reworded to "after cleaning", with no behaviour change. Already built by `common/json/CleanTextDeserializer` and T47 (887ce2b), so the only new work is one `PushTokenControllerIT` test and api-qa NTM-E57-V1. The push-token contracts cite NTM-D57, and §3 / §9 cite NTM-D56 instead of plan §10 Q2 | /sdd:amend v6.1.0 (65f523e), answering NTM-Q38 | Vuththana |
