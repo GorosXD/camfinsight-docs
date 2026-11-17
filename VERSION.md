@@ -23,6 +23,14 @@ Every change to these docs gets an entry here, newest first. Code repos read it 
 
 ---
 
+## v6.0.1 — 2026-11-17
+**Author:** Vuththana
+
+- `specs/notification-mobile/plan.md`: Plan: notification-mobile changed for spec v6.0.0 (approved by Vuththana). Part F: a `V5` migration (delete stored tokens over 2048 or with other characters, replace the 4096 check with 2048, add a character check; V4 untouched), `@Size(2048)` and `@Pattern` on both push-token DTOs checked after not-blank, tests moved to NTM-R56 / R57, NTM-E56 and a migration test for NTM-E53, verified on a local Postgres. Part G: tests only for NTM-E50, E51, E52, E54. Part H: `api/` and the dictionary to 2048 and the characters. Plan Q2 answered (blank wins).
+- `specs/README.md`: notification-mobile stage `tasks`.
+
+**Impact:** None (plan only).
+
 ## v6.0.0 — 2026-11-17
 **Author:** Vuththana
 
