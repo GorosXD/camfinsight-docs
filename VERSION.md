@@ -23,6 +23,13 @@ Every change to these docs gets an entry here, newest first. Code repos read it 
 
 ---
 
+## v6.2.1 — 2026-11-17
+**Author:** Vuththana
+
+- Ship note: the identity-service work for notification-mobile v4.0.0–v6.1.0 moved to `dev-cleaned` (identity `dev` carries the pre-cleanup history): branch `feature/notification-mobile-v6`, PR #44 into `dev-cleaned` (packages `com.camfinsight`); PR #43 into `dev` closed. V4 and V5 SQL unchanged. android-ui stays on PR #5 into `dev`.
+
+**Impact:** None (where the code lands).
+
 ## v6.2.0 — 2026-11-17
 **Author:** Vuththana
 
