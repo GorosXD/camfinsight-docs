@@ -23,6 +23,13 @@ Every change to these docs gets an entry here, newest first. Code repos read it 
 
 ---
 
+## v6.1.0 — 2026-11-17
+**Author:** Vuththana
+
+- `specs/notification-mobile/spec.md`: amended (✅ v6.1.0), answering NTM-Q38 → NTM-D57: a push `token` is cleaned like every JSON string (NBSP, zero-width, word joiner and BOM removed anywhere; whitespace trimmed at the ends) before the 2048 and character checks. Added NTM-E57; NTM-E56 and NTM-D56 reworded to "after cleaning" (no behaviour change).
+
+**Impact:** identity-service: one test for NTM-E57 (no code change). android-ui: none.
+
 ## v6.0.1 — 2026-11-17
 **Author:** Vuththana
 
