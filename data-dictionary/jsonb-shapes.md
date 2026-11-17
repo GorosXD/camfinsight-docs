@@ -4,6 +4,10 @@ The keys of every `jsonb` field. A field's table entry links here.
 
 ## documents.extraction
 
+**Status: 📝 to be confirmed by the AI team** — the `confidence` scale, and whether `issues` and `raw_lines` are lists of
+objects (as the web reads them: `issues` `{ code, message, field, line_index }`, `raw_lines` `{ text, confidence }`) or of
+strings (as the example below shows). Until then, store and pass it as received and don't rely on those details.
+
 The `POST /ai/receipts/extract` response (ai-import-service), stored as received; finance-service only checks it is a JSON
 object of at most 256 KB ([receipts](../specs/receipts/spec.md) RCT-D17, RCT-D18). Null for a file saved without a reading.
 
